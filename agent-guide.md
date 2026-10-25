@@ -119,6 +119,8 @@ A comment from the comment tool built into Claude's or Codex's browser usually a
 
 The user can edit any text, including amounts in table cells, and nothing recalculates by itself. When you see that the user changed a number (in a comment or in a diff), find every place derived from it (totals, differences, percentages, chart bars and labels, the same figure repeated elsewhere) and update them, or tell the user what still disagrees. Write the figures you update in the format the document already uses, and bring the figure the user typed into that format too, for example "€1900" to "€1,900" when the other amounts have thousands separators. Make that kind of fix yourself and mention it; don't ask the user to retype it. If the document is generated from a data file, change the data and regenerate rather than editing the derived HTML. Suggest `data-locked` for values the user shouldn't change by hand.
 
+An image file the page shows (`<img src="…">`) can go out of date too: a plan, diagram or chart that no longer matches the text after a change. Say so, and offer to redraw it as an inline `<svg>` in the same `<figure>`, in the page's colours (for an SVG file, starting from its markup), rather than leaving a caption that says the picture is wrong. Redraw it once the user agrees, and never redraw a photo.
+
 ## Seeing what the user changed
 
 The user's edits go straight into the file, and inplace prints one line per change to its output:
