@@ -9,6 +9,7 @@ import { test } from "node:test";
 
 import { documentIdOf, withDocumentId } from "../src/htmldoc.js";
 import { createPearwriteHandler, Document, FileStore, MemoryStore } from "../src/index.js";
+import { moveOldSideDir } from "../src/store.js";
 
 test("a document kept in a host's own store is edited, commented on and served under the host's names", async () => {
   const saved: string[] = [];
@@ -107,11 +108,56 @@ test("without ids written, comments are found by the file's real path, also thro
 test("comments kept in the temporary folder by an older Pearwrite move to the new place", () => {
   const path = join(mkdtempSync(join(tmpdir(), "pearwrite-old-")), "doc.html");
   writeFileSync(path, "<!doctype html><body><p data-id=\"p-1\">Ten trees</p></body>");
-  const old = join(tmpdir(), "pearwrite", `comments-${createHash("sha1").update(resolve(path)).digest("hex").slice(0, 12)}.json`);
+  const old = join(tmpdir(), "inplace", `comments-${createHash("sha1").update(resolve(path)).digest("hex").slice(0, 12)}.json`);
   mkdirSync(dirname(old), { recursive: true });
   writeFileSync(old, JSON.stringify({ last: 1, comments: [{ n: 1, id: "p-1", text: "Name the trees.", status: "open", created: "" }] }));
   const doc = new Document(path);
   assert.deepEqual(doc.comments.list().map((c) => c.text), ["Name the trees."]);
   assert.ok(!existsSync(old));
   assert.ok((doc.store as FileStore).sidePath("comments").startsWith(process.env.PEARWRITE_STATE_DIR!));
+});
+
+test("a document saved under the old name keeps its id, and gets the new name when the id is written", () => {
+  const old = '<head><meta name="inplace-id" content="abc"></head>';
+  assert.equal(documentIdOf(old), "abc");
+  assert.equal(withDocumentId(old, "abc"), '<head><meta name="pearwrite-id" content="abc"></head>');
+});
+
+test("moves the old side data folder once, and leaves a folder that's already there alone", () => {
+  const home = mkdtempSync(join(tmpdir(), "pearwrite-move-"));
+  const from = join(home, "inplace");
+  const to = join(home, "new", "pearwrite");
+  mkdirSync(from);
+  writeFileSync(join(from, "comments-abc.json"), "[]");
+  moveOldSideDir(from, to);
+  assert.equal(readFileSync(join(to, "comments-abc.json"), "utf8"), "[]");
+  assert.equal(existsSync(from), false);
+
+  mkdirSync(from);
+  writeFileSync(join(from, "comments-older.json"), "[]");
+  moveOldSideDir(from, to);
+  assert.equal(existsSync(join(from, "comments-older.json")), true, "not mixed into the new folder");
+  assert.equal(existsSync(join(to, "comments-older.json")), false);
+});
+
+test("a Codex hook set up under the old name still gets an answer", async () => {
+  const doc = new Document(new MemoryStore("report.html", '<html><body><p data-id="p-1">Hello</p></body></html>'));
+  const server = createServer(createPearwriteHandler(doc));
+  await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
+  const port = (server.address() as AddressInfo).port;
+  const status = (path: string) => new Promise<number>((ok, fail) => {
+    const req = request({ host: "127.0.0.1", port, path, headers: { host: `localhost:${port}` } }, (res) => {
+      res.resume();
+      ok(res.statusCode!);
+    });
+    req.on("error", fail);
+    req.end();
+  });
+  try {
+    assert.equal(await status("/__inplace/news?for=codex-hook"), 204);
+    assert.equal(await status("/__pearwrite/news?for=codex-hook"), 204);
+  } finally {
+    server.closeAllConnections();
+    server.close();
+  }
 });

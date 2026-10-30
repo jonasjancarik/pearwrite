@@ -46,18 +46,33 @@ const digest = (text: string) => createHash("sha1").update(text).digest("hex").s
 const FORGET_AFTER_DAYS = 90;
 
 /**
- * Where FileStore keeps side data unless told otherwise: `$PEARWRITE_STATE_DIR`, or the system's
- * place for an app's own data, outside any project and not emptied like the temporary folder.
+ * Where FileStore keeps side data unless told otherwise: `$PEARWRITE_STATE_DIR` (or `$INPLACE_STATE_DIR`,
+ * its name before the rename), or the system's place for an app's own data, outside any project and not
+ * emptied like the temporary folder.
  */
 export function defaultSideDir(): string {
-  if (process.env.PEARWRITE_STATE_DIR) return process.env.PEARWRITE_STATE_DIR;
-  if (process.platform === "darwin") return join(homedir(), "Library", "Application Support", "pearwrite");
-  if (process.platform === "win32") return join(process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"), "pearwrite");
-  return join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), "pearwrite");
+  return process.env.PEARWRITE_STATE_DIR || process.env.INPLACE_STATE_DIR || appDataDir("pearwrite");
+}
+
+function appDataDir(app: string): string {
+  if (process.platform === "darwin") return join(homedir(), "Library", "Application Support", app);
+  if (process.platform === "win32") return join(process.env.LOCALAPPDATA ?? join(homedir(), "AppData", "Local"), app);
+  return join(process.env.XDG_STATE_HOME || join(homedir(), ".local", "state"), app);
+}
+
+/** Move the side data kept when this was called inplace to its new folder, unless that folder exists already. */
+export function moveOldSideDir(from = appDataDir("inplace"), to = appDataDir("pearwrite")): void {
+  if (!existsSync(from) || existsSync(to)) return;
+  try {
+    mkdirSync(dirname(to), { recursive: true });
+    renameSync(from, to);
+  } catch {
+    // left where it was; Pearwrite starts without it
+  }
 }
 
 /** Where side data was kept before it moved to defaultSideDir. */
-const OLD_SIDE_DIR = join(tmpdir(), "pearwrite");
+const OLD_SIDE_DIR = join(tmpdir(), "inplace");
 
 let tidied = false;
 
@@ -65,6 +80,7 @@ let tidied = false;
 function tidy(dir: string): void {
   if (tidied) return;
   tidied = true;
+  if (dir === appDataDir("pearwrite")) moveOldSideDir();
   const before = Date.now() - FORGET_AFTER_DAYS * 24 * 60 * 60 * 1000;
   try {
     for (const name of readdirSync(dir)) {

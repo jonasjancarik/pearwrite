@@ -57,3 +57,9 @@ test("hints at the setup only when Codex started Pearwrite and the hook is missi
   addPearwriteHook(codexHooksPath({ CODEX_HOME: home }));
   assert.equal(codexHookHint(8765, { CODEX_HOME: home, CODEX_THREAD_ID: "t" }), undefined, "already set up");
 });
+
+test("a hook set up under the old name counts as the hook", () => {
+  const path = codexHooksPath({ CODEX_HOME: tempHome() });
+  writeFileSync(path, JSON.stringify({ hooks: { PostToolUse: [{ hooks: [{ type: "command", command: "curl -sf 'http://localhost:8765/__inplace/news?for=codex-hook' || true" }] }] } }));
+  assert.equal(hasPearwriteHook(path), true);
+});

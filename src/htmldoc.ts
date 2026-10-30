@@ -697,9 +697,12 @@ export function replaceElement(
 /** The `<meta>` that names a document, so what Pearwrite keeps beside it follows it when it's moved. */
 export const DOCUMENT_ID_META = "pearwrite-id";
 
+/** The same `<meta>` in a document saved when this was called inplace. It becomes the new one the next time the id is written. */
+const OLD_DOCUMENT_ID_META = "inplace-id";
+
 function documentIdNode(source: string): Node | null {
   for (const node of walk(parse(source))) {
-    if (node.tag === "meta" && node.attrs.get("name") === DOCUMENT_ID_META) return node;
+    if (node.tag === "meta" && (node.attrs.get("name") === DOCUMENT_ID_META || node.attrs.get("name") === OLD_DOCUMENT_ID_META)) return node;
   }
   return null;
 }

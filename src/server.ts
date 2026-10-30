@@ -26,6 +26,9 @@ import { type ChangeFeed, newsNote } from "./wait.js";
 
 const EDITOR_PREFIX = "/__pearwrite/";
 
+/** What a Codex hook set up when this was called inplace asks for, and fails silently if it stops getting an answer. */
+const OLD_NEWS_PATH = "/__inplace/news";
+
 /** The files a document can load from its folder; anything else there isn't served. */
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -1082,7 +1085,8 @@ export function createPearwriteHandler(
 
   return (req, res) => {
     const url = new URL(req.url ?? "/", "http://localhost");
-    const path = decodeURIComponent(url.pathname);
+    const asked = decodeURIComponent(url.pathname);
+    const path = asked === OLD_NEWS_PATH ? EDITOR_PREFIX + "news" : asked;
     Promise.resolve()
       .then(() => {
         const refused = refusal(req, hostOk);

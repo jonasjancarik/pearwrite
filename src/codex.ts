@@ -27,7 +27,7 @@ type HooksFile = { hooks?: Record<string, HookEntry[] | undefined> };
 /** Whether the file has a PostToolUse hook asking the Pearwrite on `port` for news. */
 export function hasPearwriteHook(path: string, port = 8765): boolean {
   const hooks = readHooks(path)?.hooks?.PostToolUse ?? [];
-  const asks = new RegExp(`localhost:${port}/__pearwrite/news\\b`);
+  const asks = new RegExp(`localhost:${port}/__(?:pearwrite|inplace)/news\\b`);
   return hooks.some((entry) => entry.hooks?.some((hook) => asks.test(hook.command ?? "")));
 }
 

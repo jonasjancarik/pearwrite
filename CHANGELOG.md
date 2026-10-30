@@ -1,11 +1,12 @@
 # Changelog
 
-All notable changes to inplace are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to Pearwrite (called inplace until this rename) are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-inplace is installed straight from GitHub (`npx github:jonasjancarik/inplace`) and isn't published to npm, so the version below is the one in `package.json` and nothing has been tagged yet.
+Pearwrite is installed straight from GitHub (`npx github:jonasjancarik/pearwrite`) and isn't published to npm, so the version below is the one in `package.json` and nothing has been tagged yet.
 
 ## Unreleased
 
+- **inplace is now Pearwrite**, the same name as the hosted version. The command is `pearwrite`, the package is `pearwrite`, and the repository is `jonasjancarik/pearwrite`. Your documents, comments and history carry over: documents saved earlier are still recognised, the data folder moves to its new name the first time you open a document, Codex hooks you already set up keep working, and `INPLACE_TOKEN`, `INPLACE_JEV_KEY`, `INPLACE_STATE_DIR` and `INPLACE_FILE` still work alongside their `PEARWRITE_` names. If you added the MCP server, the skill or a host's `inplace-html` import by hand, update them to the new name. For hosts: `createInplaceServer` and `createInplaceHandler` are now `createPearwriteServer` and `createPearwriteHandler`, and the page's addresses start with `/__pearwrite/`.
 - **Your agent knows about Keep and Keep all.** Asked to accept its changes, it used to say the page could only undo them. Its instructions now say that Keep takes a change off the list to review, that Keep all does it for every change, and that only the user can do either.
 - **Your agent can say why it made a change.** `replace_element` and `find_replace` take an optional `reason`, one short sentence. It shows under the change in the list of changes to review, and in the tooltip on its blue bar. A later edit to the same block without a reason keeps the earlier one.
 - For hosts: `Document.replaceAll(text, who, what)` replaces the whole file on a person's behalf, such as putting back an earlier version. It counts as their change in who wrote what, clears the agent's changes waiting for review, and tells the agent in one change line (`what`).

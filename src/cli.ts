@@ -131,7 +131,7 @@ const allowHosts = values["allow-host"].map((value) => {
   return name;
 });
 // Comment tags are opt-in: only with a key, and never with --no-tags.
-const jevKey = values["no-tags"] ? undefined : process.env.PEARWRITE_JEV_KEY?.trim() || undefined;
+const jevKey = values["no-tags"] ? undefined : process.env.PEARWRITE_JEV_KEY?.trim() || process.env.INPLACE_JEV_KEY?.trim() || undefined;
 const tagger = jevKey ? jevTagger(jevKey) : undefined;
 const TAGS_NOTICE = "Comments are tagged by Jev (TypeSafe AI), which receives each comment and the text of the element it's on.";
 
@@ -158,7 +158,7 @@ if (positionals[0] === "wait") {
   // A tunnel makes this reachable from the internet, so stay local and require a token.
   const port = Number(values.port ?? "8766");
   const host = values.host ?? "127.0.0.1";
-  const token = values.token ?? process.env.PEARWRITE_TOKEN ?? newToken();
+  const token = values.token ?? process.env.PEARWRITE_TOKEN ?? process.env.INPLACE_TOKEN ?? newToken();
   runMcpHttpServer({ pauseSeconds, logPath, allowHosts, port, host, token, tagger }).then(
     (server) => {
       const actual = (server.address() as { port: number }).port;
@@ -200,7 +200,7 @@ function serve(): void {
   // stdout and the log file can be read without Pearwrite knowing.
   const agent = new AgentStatus({ unseenReaders: true });
   const onPause = values["on-pause"]
-    ? new PauseCommand(values["on-pause"], { PEARWRITE_FILE: path }, print, (running) => agent.commandRunning(running))
+    ? new PauseCommand(values["on-pause"], { PEARWRITE_FILE: path, INPLACE_FILE: path }, print, (running) => agent.commandRunning(running))
     : undefined;
   // The same lines, numbered, for `pearwrite wait`.
   const feed = pauseSeconds ? new ChangeFeed() : undefined;
