@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>inplace: write with your coding agent without breaking your flow</title>
+<title>pearwrite: write with your coding agent without breaking your flow</title>
 <meta name="description" content="Edit an HTML document your agent wrote right on the page, without breaking its design. When you pause, your agent fixes whatever your edit affects, without waiting to be asked.">
-<meta property="og:title" content="inplace: write with your coding agent without breaking your flow">
+<meta property="og:title" content="pearwrite: write with your coding agent without breaking your flow">
 <meta property="og:description" content="Edit an HTML document your agent wrote right on the page, without breaking its design. When you pause, your agent fixes whatever your edit affects, without waiting to be asked.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://jonasjancarik.github.io/inplace/">
-<meta property="og:image" content="https://jonasjancarik.github.io/inplace/og-image.png">
+<meta property="og:url" content="https://jonasjancarik.github.io/pearwrite/">
+<meta property="og:image" content="https://jonasjancarik.github.io/pearwrite/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="inplace: Write with your coding agent without breaking your flow.">
+<meta property="og:image:alt" content="pearwrite: Write with your coding agent without breaking your flow.">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23233128'/%3E%3Cpath d='M9 9h14M9 15h14M9 21h8' stroke='%23f4efe4' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M21 19v7' stroke='%23e9b949' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,12 +26,12 @@
 <header class="top">
   <a class="brand" href="#">
     <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 9h14M9 15h14M9 21h8" stroke="var(--paper)" stroke-width="2.4" stroke-linecap="round"/><path d="M21 19v7" stroke="#e9b949" stroke-width="2.4" stroke-linecap="round"/></svg>
-    inplace
+    Pearwrite
   </a>
   <div class="top-right">
     <nav>
       <a href="how-it-works.html" class="hide-sm">How it works</a>
-      <a href="https://github.com/jonasjancarik/inplace">GitHub</a>
+      <a href="https://github.com/jonasjancarik/pearwrite">GitHub</a>
     </nav>
     <div class="theme" role="group" aria-label="Colour theme">
       <button type="button" data-theme="light" title="Light" aria-label="Light"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
@@ -52,10 +52,10 @@
         <span class="or" aria-hidden="true">or</span>
         <button role="tab" aria-selected="false" aria-controls="install-cmd" id="tab-cmd">In your terminal</button>
       </div>
-      <div class="cmd prompt" role="tabpanel" id="install-prompt" aria-labelledby="tab-prompt"><span>Install the inplace skill by running npx skills add jonasjancarik/inplace</span><button class="copy" data-copy="Install the inplace skill by running npx skills add jonasjancarik/inplace">Copy</button></div>
-      <div class="cmd" role="tabpanel" id="install-cmd" aria-labelledby="tab-cmd" hidden><span>npx skills add jonasjancarik/inplace</span><button class="copy" data-copy="npx skills add jonasjancarik/inplace">Copy</button></div>
+      <div class="cmd prompt" role="tabpanel" id="install-prompt" aria-labelledby="tab-prompt"><span>Install the Pearwrite skill by running npx skills add jonasjancarik/pearwrite</span><button class="copy" data-copy="Install the Pearwrite skill by running npx skills add jonasjancarik/pearwrite">Copy</button></div>
+      <div class="cmd" role="tabpanel" id="install-cmd" aria-labelledby="tab-cmd" hidden><span>npx skills add jonasjancarik/pearwrite</span><button class="copy" data-copy="npx skills add jonasjancarik/pearwrite">Copy</button></div>
       <p class="try-label">Then try it on our example, a short proposal for a rooftop garden:</p>
-      <div class="cmd prompt try"><span>Download https://raw.githubusercontent.com/jonasjancarik/inplace/main/examples/garden-proposal.html into this folder and open it in inplace. Briefly tell me how we can work on it together.</span><button class="copy" data-copy="Download https://raw.githubusercontent.com/jonasjancarik/inplace/main/examples/garden-proposal.html into this folder and open it in inplace. Briefly tell me how we can work on it together.">Copy</button></div>
+      <div class="cmd prompt try"><span>Download https://raw.githubusercontent.com/jonasjancarik/pearwrite/main/examples/garden-proposal.html into this folder and open it in Pearwrite. Briefly tell me how we can work on it together.</span><button class="copy" data-copy="Download https://raw.githubusercontent.com/jonasjancarik/pearwrite/main/examples/garden-proposal.html into this folder and open it in Pearwrite. Briefly tell me how we can work on it together.">Copy</button></div>
       <p class="install-note">Or tell your agent which of your own documents you want to work on together.</p>
     </div>
   </div>
@@ -97,10 +97,10 @@
     <header>Agent <span>garden-proposal.html</span></header>
     <p class="idle">Waiting for changes on the page…</p>
     <div class="log" id="d-log">
-      <div class="o"><span class="tag">inplace</span>edited <code>p-1</code>: “shared” → “&lt;strong&gt;shared&lt;/strong&gt;”</div>
-      <div class="o"><span class="tag">inplace</span>added <code>tr-3</code> after <code>tr-2</code>: “Rain barrel”, “€400”</div>
+      <div class="o"><span class="tag">pearwrite</span>edited <code>p-1</code>: “shared” → “&lt;strong&gt;shared&lt;/strong&gt;”</div>
+      <div class="o"><span class="tag">pearwrite</span>added <code>tr-3</code> after <code>tr-2</code>: “Rain barrel”, “€400”</div>
       <div class="a"><span class="tag">agent</span>That row feeds the total, so I updated <code>td-6</code> to €5,150.</div>
-      <div class="o"><span class="tag">inplace</span>comment #1 on <code>table-1</code>: “Mention the 10% discount if we order before March.”</div>
+      <div class="o"><span class="tag">pearwrite</span>comment #1 on <code>table-1</code>: “Mention the 10% discount if we order before March.”</div>
       <div class="a"><span class="tag">agent</span>Added a paragraph below <code>table-1</code>.</div>
       <div class="c">The page reloaded with your edits and mine.</div>
       <div class="a"><span class="tag">agent</span>The beds cost doesn&rsquo;t match <code>quotes/beds.pdf</code>, so I left a comment on it for you.</div>
@@ -173,8 +173,8 @@
 </section>
 
 <footer class="site">
-  <span>inplace · MIT licensed · by <a href="https://github.com/jonasjancarik">Jonas Jancarik</a></span>
-  <span><a href="https://github.com/jonasjancarik/inplace">Source and documentation</a></span>
+  <span>Pearwrite · MIT licensed · by <a href="https://github.com/jonasjancarik">Jonas Jancarik</a></span>
+  <span><a href="https://github.com/jonasjancarik/pearwrite">Source and documentation</a></span>
 </footer>
 
 </div>

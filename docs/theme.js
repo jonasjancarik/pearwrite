@@ -4,8 +4,8 @@ const setTheme = (t) => {
   if (t === "light" || t === "dark") root.dataset.theme = t; else delete root.dataset.theme;
   themeBtns.forEach((b) => b.setAttribute("aria-pressed", b.dataset.theme === (root.dataset.theme || "system")));
 };
-try { setTheme(localStorage.getItem("inplace-theme")); } catch { setTheme(); }
+try { setTheme(localStorage.getItem("pearwrite-theme")); } catch { setTheme(); }
 themeBtns.forEach((b) => b.addEventListener("click", () => {
   setTheme(b.dataset.theme);
-  try { b.dataset.theme === "system" ? localStorage.removeItem("inplace-theme") : localStorage.setItem("inplace-theme", b.dataset.theme); } catch {}
+  try { b.dataset.theme === "system" ? localStorage.removeItem("pearwrite-theme") : localStorage.setItem("pearwrite-theme", b.dataset.theme); } catch {}
 }));

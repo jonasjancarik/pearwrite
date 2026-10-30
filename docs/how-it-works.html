@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How inplace works</title>
-<meta name="description" content="What inplace changes in your HTML file, how your agent hears about your edits, and a few things worth knowing.">
+<title>How Pearwrite works</title>
+<meta name="description" content="What Pearwrite changes in your HTML file, how your agent hears about your edits, and a few things worth knowing.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23233128'/%3E%3Cpath d='M9 9h14M9 15h14M9 21h8' stroke='%23f4efe4' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M21 19v7' stroke='%23e9b949' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,13 +17,13 @@
 <header class="top">
   <a class="brand" href="index.html">
     <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="currentColor"/><path d="M9 9h14M9 15h14M9 21h8" stroke="var(--paper)" stroke-width="2.4" stroke-linecap="round"/><path d="M21 19v7" stroke="#e9b949" stroke-width="2.4" stroke-linecap="round"/></svg>
-    inplace
+    Pearwrite
   </a>
   <div class="top-right">
     <nav>
       <a href="how-it-works.html" class="hide-sm" aria-current="page">How it works</a>
       <a href="index.html#start">Get started</a>
-      <a href="https://github.com/jonasjancarik/inplace">GitHub</a>
+      <a href="https://github.com/jonasjancarik/pearwrite">GitHub</a>
     </nav>
     <div class="theme" role="group" aria-label="Colour theme">
       <button type="button" data-theme="light" title="Light" aria-label="Light"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
@@ -34,7 +34,7 @@
 </header>
 
 <div class="page-head">
-  <h1>How inplace works</h1>
+  <h1>How Pearwrite works</h1>
   <p class="lede">What changes in your file when you edit on the page, how your agent hears about it, how comments work in both directions, and a few things worth knowing.</p>
 </div>
 
@@ -42,7 +42,7 @@
   <div class="split">
     <div>
       <h2>What happens to your file</h2>
-      <p>The first time the page opens, inplace adds a <code>data-id</code> to each block and container that doesn't have one. The ids don't change how the page looks or prints, and existing ids are never renamed.</p>
+      <p>The first time the page opens, Pearwrite adds a <code>data-id</code> to each block and container that doesn't have one. The ids don't change how the page looks or prints, and existing ids are never renamed.</p>
       <p>After that, the file only changes when you make a change on the page, and then only in the block you edited or the element you moved. If the document is in git, every edit shows up as a small, readable diff.</p>
     </div>
     <pre class="diff" aria-label="Example diff"><span class="h">@@ garden-proposal.html @@</span><span class="d">-&lt;h1&gt;A garden on the roof&lt;/h1&gt;</span><span class="p">+&lt;h1 data-id="h1-1"&gt;A garden on the roof&lt;/h1&gt;</span><span class="d">-&lt;table aria-label="Estimated costs"&gt;</span><span class="p">+&lt;table data-id="table-1" aria-label="Estimated costs"&gt;</span><span class="h"> …</span><span class="d">-&lt;p data-id="p-4"&gt;Volunteers water in summer.&lt;/p&gt;</span><span class="p">+&lt;p data-id="p-4"&gt;Volunteers take turns watering in summer.&lt;/p&gt;</span></pre>
@@ -53,23 +53,23 @@
   <div class="split">
     <div>
       <h2>How your agent hears about your edits</h2>
-      <p>While it runs, inplace prints one line for every change made on the page, showing only the part that changed. The skill has your agent start inplace in the background and read these lines before it handles a comment or touches the file.</p>
+      <p>While it runs, Pearwrite prints one line for every change made on the page, showing only the part that changed. The skill has your agent start Pearwrite in the background and read these lines before it handles a comment or touches the file.</p>
       <p>That way it notices a changed amount and fixes the totals and charts that depend on it, or a moved section and the “see the table below” that now points the wrong way. You can also just tell it to check your edits.</p>
-      <p>When you stop typing for a few seconds, inplace sums up what you changed, and an agent that&rsquo;s following along picks it up straight away. The diagram below shows how that works when your agent waits for your pauses, as Claude Code and Codex do.</p>
+      <p>When you stop typing for a few seconds, Pearwrite sums up what you changed, and an agent that&rsquo;s following along picks it up straight away. The diagram below shows how that works when your agent waits for your pauses, as Claude Code and Codex do.</p>
     </div>
-    <pre class="diff changelog" aria-label="Example of inplace's change log"><span><i>16:34:18</i> edited p-1: "…proposes shared raised…" → "…proposes &lt;strong&gt;shared&lt;/strong&gt; raised…"</span><span><i>16:34:40</i> edited td-4: "€1,150" → "€1,350"</span><span><i>16:34:52</i> changed p-3 from &lt;p&gt; to &lt;h2&gt;</span><span><i>16:35:21</i> moved li-1 before li-3 (inside ul-1)</span><span><i>16:36:02</i> added p-5 &lt;p&gt; after p-2: "A structural survey last autumn confirmed…"</span><span><i>16:36:07</i> paused after 5 changes: edited p-1, edited td-4, changed p-3, moved li-1, added p-5</span></pre>
+    <pre class="diff changelog" aria-label="Example of Pearwrite's change log"><span><i>16:34:18</i> edited p-1: "…proposes shared raised…" → "…proposes &lt;strong&gt;shared&lt;/strong&gt; raised…"</span><span><i>16:34:40</i> edited td-4: "€1,150" → "€1,350"</span><span><i>16:34:52</i> changed p-3 from &lt;p&gt; to &lt;h2&gt;</span><span><i>16:35:21</i> moved li-1 before li-3 (inside ul-1)</span><span><i>16:36:02</i> added p-5 &lt;p&gt; after p-2: "A structural survey last autumn confirmed…"</span><span><i>16:36:07</i> paused after 5 changes: edited p-1, edited td-4, changed p-3, moved li-1, added p-5</span></pre>
   </div>
 
   <figure class="flow" id="flow">
     <div class="flow-scroll">
     <svg viewBox="0 0 760 420" role="img" aria-labelledby="flow-title flow-desc">
       <title id="flow-title">How an edit reaches your agent</title>
-      <desc id="flow-desc">Everything runs on your computer. The page in your browser sends each edit to inplace, which writes that block into the HTML file and, once you stop typing, answers your agent&rsquo;s waiting request. The agent edits the file and starts its next wait, and inplace shows an eye and then a check on the page.</desc>
+      <desc id="flow-desc">Everything runs on your computer. The page in your browser sends each edit to Pearwrite, which writes that block into the HTML file and, once you stop typing, answers your agent&rsquo;s waiting request. The agent edits the file and starts its next wait, and Pearwrite shows an eye and then a check on the page.</desc>
       <defs><marker id="flow-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
       <rect class="area" x="10" y="10" width="740" height="400" rx="18"/>
       <text class="area-label" x="30" y="36">Your computer</text>
       <rect class="area inner" x="250" y="48" width="240" height="346" rx="14"/>
-      <text class="area-label" x="370" y="68" text-anchor="middle">inplace (a Node process)</text>
+      <text class="area-label" x="370" y="68" text-anchor="middle">Pearwrite (a Node process)</text>
 
       <g class="box you"><rect x="40" y="82" width="170" height="56" rx="9"/><text x="125" y="104" text-anchor="middle">The page</text><text class="sub" x="125" y="123" text-anchor="middle">In your browser</text></g>
       <g class="box"><rect x="270" y="82" width="200" height="52" rx="9"/><text x="370" y="103" text-anchor="middle">Saves your edit</text><text class="sub" x="370" y="121" text-anchor="middle">Only that block</text></g>
@@ -77,7 +77,7 @@
       <g class="box"><rect x="270" y="242" width="200" height="52" rx="9"/><text x="370" y="263" text-anchor="middle">List of your changes</text><text class="sub" x="370" y="281" text-anchor="middle">Numbered, in order</text></g>
       <g class="box"><rect x="270" y="322" width="200" height="52" rx="9"/><text x="370" y="343" text-anchor="middle">Follows the agent</text><text class="sub" x="370" y="361" text-anchor="middle">Picked up? Done?</text></g>
       <g class="box file"><rect x="540" y="82" width="180" height="56" rx="9"/><text x="630" y="104" text-anchor="middle">document.html</text><text class="sub" x="630" y="123" text-anchor="middle">The only copy</text></g>
-      <g class="box agent"><rect x="540" y="242" width="180" height="56" rx="9"/><text x="630" y="264" text-anchor="middle">Your agent</text><text class="sub" x="630" y="283" text-anchor="middle">Runs inplace wait</text></g>
+      <g class="box agent"><rect x="540" y="242" width="180" height="56" rx="9"/><text x="630" y="264" text-anchor="middle">Your agent</text><text class="sub" x="630" y="283" text-anchor="middle">Runs pearwrite wait</text></g>
 
       <line class="arr" x1="210" y1="110" x2="266" y2="110" marker-end="url(#flow-arrow)"/>
       <line class="arr" x1="470" y1="110" x2="536" y2="110" marker-end="url(#flow-arrow)"/>
@@ -98,14 +98,14 @@
     </svg>
     </div>
     <ol class="steps">
-      <li>You type in a paragraph, and the page sends just that block to inplace.</li>
-      <li>inplace writes the block into your file and leaves the rest of it as it was.</li>
-      <li>Every edit restarts a short countdown. Once you&rsquo;ve stopped for 5 seconds, inplace sums up the burst as one pause and adds it to its list of changes.</li>
-      <li>Your agent has had a request open the whole time: <code>inplace wait</code>. inplace answers it with the pause, so your agent wakes up with exactly what you changed, and an eye appears beside each block you edited.</li>
+      <li>You type in a paragraph, and the page sends just that block to pearwrite.</li>
+      <li>Pearwrite writes the block into your file and leaves the rest of it as it was.</li>
+      <li>Every edit restarts a short countdown. Once you&rsquo;ve stopped for 5 seconds, Pearwrite sums up the burst as one pause and adds it to its list of changes.</li>
+      <li>Your agent has had a request open the whole time: <code>pearwrite wait</code>. Pearwrite answers it with the pause, so your agent wakes up with exactly what you changed, and an eye appears beside each block you edited.</li>
       <li>If something needs fixing, such as a total that depends on the amount you changed, the agent edits the file directly. Every open page reloads and highlights what it changed.</li>
-      <li>When it&rsquo;s done, the agent opens its next <code>inplace wait</code>. That tells inplace it has finished, so the eye turns into a check and fades. If you paused again in the meantime, the new request gets that pause straight away, so nothing is missed.</li>
+      <li>When it&rsquo;s done, the agent opens its next <code>pearwrite wait</code>. That tells Pearwrite it has finished, so the eye turns into a check and fades. If you paused again in the meantime, the new request gets that pause straight away, so nothing is missed.</li>
     </ol>
-    <p class="flow-note">Other ways of following your edits skip some of these steps. When Claude Code runs inplace as an MCP server, it can get each pause as a message instead of waiting for it; the page then shows the eye but not the check, because inplace can&rsquo;t tell when the agent is done. An agent that only reads inplace&rsquo;s output or log file gets your edits too, but inplace can&rsquo;t see it, so the page shows no marks. And any agent with a headless mode, such as <code>claude -p</code> or <code>codex exec</code>, can be started by inplace itself at each pause.</p>
+    <p class="flow-note">Other ways of following your edits skip some of these steps. When Claude Code runs Pearwrite as an MCP server, it can get each pause as a message instead of waiting for it; the page then shows the eye but not the check, because Pearwrite can&rsquo;t tell when the agent is done. An agent that only reads Pearwrite&rsquo;s output or log file gets your edits too, but Pearwrite can&rsquo;t see it, so the page shows no marks. And any agent with a headless mode, such as <code>claude -p</code> or <code>codex exec</code>, can be started by Pearwrite itself at each pause.</p>
   </figure>
 </section>
 
@@ -117,7 +117,7 @@
       <p>Your agent gets each one with the element&rsquo;s <code>data-id</code> and the words you selected, so it finds the exact spot even after the wording has changed. Once it has dealt with a comment, the comment is marked done, with a note if there&rsquo;s something you should know. If your agent&rsquo;s own browser has a comment tool, as Claude&rsquo;s and Codex&rsquo;s do, you can use that too.</p>
       <p>Your agent comments as well. When it notices something that&rsquo;s yours to decide, such as a figure that doesn&rsquo;t match your project&rsquo;s data or a claim its sources don&rsquo;t back up, it leaves a blue comment instead of changing your text. Answer it to tell the agent what to do, or dismiss it if nothing needs to change.</p>
     </div>
-    <pre class="diff changelog" aria-label="Example of comments in inplace's change log"><span><i>16:41:02</i> comment #3 on p-7 at "raised beds are shared": "Say how many beds each floor gets."</span><span><i>16:41:40</i> comment #3 marked done by the agent: "Two beds per floor, as in the survey."</span><span><i>16:44:12</i> comment #4 by the agent on td-2 at "€3,600": "The quote in quotes/beds.pdf is €3,840. Update it and the total?"</span><span><i>16:45:30</i> comment #4 answered by the user: "Yes, please."</span></pre>
+    <pre class="diff changelog" aria-label="Example of comments in Pearwrite's change log"><span><i>16:41:02</i> comment #3 on p-7 at "raised beds are shared": "Say how many beds each floor gets."</span><span><i>16:41:40</i> comment #3 marked done by the agent: "Two beds per floor, as in the survey."</span><span><i>16:44:12</i> comment #4 by the agent on td-2 at "€3,600": "The quote in quotes/beds.pdf is €3,840. Update it and the total?"</span><span><i>16:45:30</i> comment #4 answered by the user: "Yes, please."</span></pre>
   </div>
 </section>
 
@@ -134,8 +134,8 @@
 </section>
 
 <footer class="site">
-  <span>inplace · MIT licensed · by <a href="https://github.com/jonasjancarik">Jonas Jancarik</a></span>
-  <span><a href="https://github.com/jonasjancarik/inplace">Source and documentation</a></span>
+  <span>Pearwrite · MIT licensed · by <a href="https://github.com/jonasjancarik">Jonas Jancarik</a></span>
+  <span><a href="https://github.com/jonasjancarik/pearwrite">Source and documentation</a></span>
 </footer>
 
 </div>
