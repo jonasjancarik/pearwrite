@@ -52,7 +52,7 @@ test("hints at the setup only when Codex started Pearwrite and the hook is missi
   assert.equal(startedByCodex({}), false);
   assert.equal(startedByCodex({}, "codex-mcp-client"), true);
   assert.equal(codexHookHint(8765, { CODEX_HOME: home }), undefined, "not Codex");
-  assert.match(codexHookHint(8765, { CODEX_HOME: home, CODEX_THREAD_ID: "t" })!, /`npx -y github:jonasjancarik\/pearwrite setup codex`/);
+  assert.match(codexHookHint(8765, { CODEX_HOME: home, CODEX_THREAD_ID: "t" })!, /`npx -y --allow-git=all github:jonasjancarik\/pearwrite setup codex`/);
   assert.match(codexHookHint(8800, { CODEX_HOME: home }, "codex-mcp-client")!, /setup codex --port 8800`/);
   addPearwriteHook(codexHooksPath({ CODEX_HOME: home }));
   assert.equal(codexHookHint(8765, { CODEX_HOME: home, CODEX_THREAD_ID: "t" }), undefined, "already set up");

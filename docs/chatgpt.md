@@ -9,7 +9,7 @@ There are two ways to connect:
 - **OpenAI's [Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels).** You create a tunnel in the OpenAI Platform settings and run OpenAI's `tunnel-client` on your computer. It can start Pearwrite itself, so nothing is exposed to the internet:
 
   ```bash
-  tunnel-client init --sample sample_mcp_stdio_local --profile pearwrite --tunnel-id <your tunnel id> --mcp-command "npx -y github:jonasjancarik/pearwrite mcp"
+  tunnel-client init --sample sample_mcp_stdio_local --profile pearwrite --tunnel-id <your tunnel id> --mcp-command "npx -y --allow-git=all github:jonasjancarik/pearwrite mcp"
   ```
 
   ```bash
@@ -21,7 +21,7 @@ There are two ways to connect:
 - **Any other HTTPS tunnel**, such as `cloudflared` or ngrok. Run Pearwrite's HTTP mode with a token you choose, then point the tunnel at it:
 
   ```bash
-  PEARWRITE_TOKEN=<a long random string> npx -y github:jonasjancarik/pearwrite mcp --http
+  PEARWRITE_TOKEN=<a long random string> npx -y --allow-git=all github:jonasjancarik/pearwrite mcp --http
   ```
 
   ```bash

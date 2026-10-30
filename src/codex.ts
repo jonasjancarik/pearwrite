@@ -66,7 +66,7 @@ export function addPearwriteHook(path: string, port = 8765): { result: "added" |
  */
 export function codexHookHint(port = 8765, env: NodeJS.ProcessEnv = process.env, mcpClient?: string): string | undefined {
   if (!startedByCodex(env, mcpClient) || hasPearwriteHook(codexHooksPath(env), port)) return undefined;
-  const setup = `npx -y github:jonasjancarik/pearwrite setup codex${port === 8765 ? "" : ` --port ${port}`}`;
+  const setup = `npx -y --allow-git=all github:jonasjancarik/pearwrite setup codex${port === 8765 ? "" : ` --port ${port}`}`;
   return "Codex: comments the user leaves while you're busy reach you only when you next wait. " +
     `In your reply, offer once to set up a hook that passes them on after each of your tool calls. If the user agrees, run \`${setup}\`, ` +
     "and tell them Codex will ask them to approve the new hook.";

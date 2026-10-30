@@ -21,6 +21,15 @@ jobs:
       - run: npm ci
       - run: npm test
 
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm run test:install
+
   e2e:
     runs-on: ubuntu-latest
     env:

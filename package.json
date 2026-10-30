@@ -31,6 +31,7 @@
     "test": "npm run build && node --test --import ./dist/test/setup.js dist/test/*.test.js",
     "prepare": "tsc && tsc -p src/editor",
     "test:e2e": "npm run build && playwright test",
+    "test:install": "node scripts/check-git-install.mjs",
     "record-demo": "npm run build && node scripts/record-demo.mjs"
   },
   "dependencies": {

@@ -11,7 +11,7 @@ Coding agents have become good at writing documents as hand-crafted HTML: report
 Pearwrite takes a different approach. It serves your HTML file exactly as it is and lets you click into the rendered page and type. Your change goes into that one paragraph, cell or heading, and the rest of the file stays exactly as it was. Your agent sees each edit as you make it, so when you change an amount it can fix the total. For anything bigger, such as rewording a section, adding a row or fixing a chart, you select the text or point at the element, leave a comment on the page, and the agent edits the file. Every open page reloads as soon as the file changes and briefly highlights what the agent changed, so you always see the current version and where it differs.
 
 ```bash
-npx github:jonasjancarik/pearwrite report.html
+npx --allow-git=all github:jonasjancarik/pearwrite report.html
 ```
 
 ## Why it works this way
@@ -45,13 +45,19 @@ The skill tells the agent how to start Pearwrite. The detailed instructions, suc
 You can also start Pearwrite without an agent and open `http://localhost:8765/` in any browser:
 
 ```bash
-npx github:jonasjancarik/pearwrite path/to/document.html
+npx --allow-git=all github:jonasjancarik/pearwrite path/to/document.html
+```
+
+`--allow-git=all` lets npm 12 and newer install from GitHub, which they otherwise refuse with `EALLOWGIT`. Older versions don't need it but accept it. To keep a `pearwrite` command on your PATH, install it with npm 12, whichever npm you normally use (plain `npm install -g github:jonasjancarik/pearwrite` fails on npm 11 and older with `tsc: command not found`):
+
+```bash
+npx -y npm@12 install -g --allow-git=all github:jonasjancarik/pearwrite
 ```
 
 The first run takes a little longer while npm downloads and builds it. Pearwrite writes to the file it serves, so to try it on the example, copy it first:
 
 ```bash
-cp examples/garden-proposal.html /tmp/ && npx github:jonasjancarik/pearwrite /tmp/garden-proposal.html
+cp examples/garden-proposal.html /tmp/ && npx --allow-git=all github:jonasjancarik/pearwrite /tmp/garden-proposal.html
 ```
 
 ## What you can and can't edit on the page
@@ -178,7 +184,7 @@ An agent normally reads these lines only when it next does something: when you l
 When Codex opens a document without this hook set up, it offers to add it. You can also add it yourself:
 
 ```bash
-npx -y github:jonasjancarik/pearwrite setup codex
+npx -y --allow-git=all github:jonasjancarik/pearwrite setup codex
 ```
 
 This adds a hook to `~/.codex/hooks.json` (or `$CODEX_HOME/hooks.json`), keeping the hooks already there and backing the file up first. If the hook is already there, it does nothing. To add it by hand instead, put this in the file next to the hooks already there:
@@ -217,7 +223,7 @@ The server is also a Claude Code [channel](https://code.claude.com/docs/en/chann
 Add it once for all your projects, then start Claude Code with the channel turned on:
 
 ```bash
-claude mcp add --scope user pearwrite -- npx -y github:jonasjancarik/pearwrite mcp
+claude mcp add --scope user pearwrite -- npx -y --allow-git=all github:jonasjancarik/pearwrite mcp
 ```
 
 ```bash
@@ -320,6 +326,8 @@ The page's comments, highlights, list of changes and other controls follow the p
 npm install
 npm test
 ```
+
+`npm run test:install` installs the latest commit from git, globally and with npx, and checks that the command runs.
 
 The script that does the editing in the page lives in `src/editor/`. Its files are plain TypeScript scripts rather than modules: they share one scope, so code in one file can call functions from another without imports. `npm run build` type-checks them against the browser's DOM types, and the server joins the compiled files into the single script it adds to the page, in the order listed in `src/editor-script.ts`. When you add a file there, add it to that list too. `npm run test:e2e` runs the browser tests that cover it.
 
