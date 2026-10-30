@@ -3,7 +3,7 @@
   // scope; src/editor-script.ts joins their compiled output into the script the server serves.
   "compilerOptions": {
     "target": "es2023",
-    // Keeps the page's import() of /__inplace/anchor.js as it is.
+    // Keeps the page's import() of /__pearwrite/anchor.js as it is.
     "module": "esnext",
     "lib": ["es2023", "dom", "dom.iterable"],
     "rootDir": ".",

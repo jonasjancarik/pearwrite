@@ -1,4 +1,4 @@
-// Records docs/demo.gif: a short, real session with inplace on the example
+// Records docs/demo.gif: a short, real session with Pearwrite on the example
 // document. Needs ffmpeg. Run with `npm run record-demo`.
 
 import { execFileSync, spawn } from "node:child_process";
@@ -11,7 +11,7 @@ import { chromium } from "@playwright/test";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "docs", "demo.gif");
-const work = mkdtempSync(join(tmpdir(), "inplace-demo-"));
+const work = mkdtempSync(join(tmpdir(), "pearwrite-demo-"));
 const file = join(work, "garden-proposal.html");
 copyFileSync(join(ROOT, "examples", "garden-proposal.html"), file);
 
@@ -83,9 +83,9 @@ await page.mouse.down();
 await page.mouse.move(word.x + word.w - 1, word.y + word.h / 2, { steps: 10 });
 await page.mouse.up();
 await wait(700);
-await moveTo(page.locator("#inplace-toolbar").getByTitle(/^Bold/));
+await moveTo(page.locator("#pearwrite-toolbar").getByTitle(/^Bold/));
 await wait(300);
-await page.locator("#inplace-toolbar").getByTitle(/^Bold/).click();
+await page.locator("#pearwrite-toolbar").getByTitle(/^Bold/).click();
 await wait(1100);
 
 // 2. Type a sentence

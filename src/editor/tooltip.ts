@@ -5,8 +5,8 @@
 // outside every block, so it can never be saved into the file.
 const rewritten = new WeakMap<Element, string>(); // element tinted as a whole -> its text from before
 const tip = document.createElement("div");
-tip.id = "inplace-tip";
-tip.dataset.inplaceUi = "";
+tip.id = "pearwrite-tip";
+tip.dataset.pearwriteUi = "";
 tip.setAttribute("role", "tooltip");
 document.body.append(tip);
 let tipFor: object | null = null; // the change the tooltip shows

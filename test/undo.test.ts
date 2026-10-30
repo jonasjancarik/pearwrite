@@ -19,13 +19,13 @@ const LIST = `<!doctype html><html><body>
 `;
 
 function open(html = LIST) {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-undo-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-undo-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, html);
   const lines: string[] = [];
   const doc = new Document(path, true, (line) => lines.push(line), dir);
   const read = () => readFileSync(path, "utf8");
-  // An agent's edit: a write inplace didn't make.
+  // An agent's edit: a write Pearwrite didn't make.
   const agent = (from: string, to: string) => {
     const text = read();
     assert.ok(text.includes(from), `agent edit: ${from} not found`);

@@ -2,10 +2,10 @@
 // Always on. A bar in the margin marks each block with a change to review, and pointing at the
 // block, or moving into it with the keyboard, shows Keep and Undo beside it. The list of changes
 // has them all at the top. The server keeps the list, so nothing of this is in the file.
-const reviewBars = make("div", { id: "inplace-pending-layer" });
-reviewBars.dataset.inplaceUi = "";
-const reviewActions = make("div", { id: "inplace-pending-actions", role: "group", ariaLabel: "Your agent's change" });
-reviewActions.dataset.inplaceUi = "";
+const reviewBars = make("div", { id: "pearwrite-pending-layer" });
+reviewBars.dataset.pearwriteUi = "";
+const reviewActions = make("div", { id: "pearwrite-pending-actions", role: "group", ariaLabel: "Your agent's change" });
+reviewActions.dataset.pearwriteUi = "";
 let actionsFor: HTMLElement | null = null;
 let hideActionsTimer = 0;
 const oldWordTips = new Set<Element>(); // blocks whose old words show on hover because of a change to review
@@ -18,8 +18,8 @@ const ANNOUNCE_KEY = `${STATE_KEY}:announce`;
 let copyLeft: { id: string; why: string }[] | null = null; // changes the last copy without them still had
 
 // What happened, for screen readers: a polite live region nobody sees.
-const announcer = make("div", { id: "inplace-announce", role: "status" });
-announcer.dataset.inplaceUi = "";
+const announcer = make("div", { id: "pearwrite-announce", role: "status" });
+announcer.dataset.pearwriteUi = "";
 document.body.append(announcer);
 function announce(text: string) {
   announcer.textContent = "";
@@ -83,7 +83,7 @@ function paintToReview() {
       if (tintWords(el, p.before)) {
         // Keep the ranges for the tooltip, as once a tint has faded, but don't colour them.
         CSS.highlights.delete(wordChanges.get(el)!.name);
-        el.classList.remove("inplace-changed-words");
+        el.classList.remove("pearwrite-changed-words");
       } else rememberRewritten(el, p.before);
       oldWordTips.add(el);
     }
@@ -144,7 +144,7 @@ document.addEventListener("keydown", (e) => {
   const sel = getSelection();
   const at = sel?.rangeCount ? sel.getRangeAt(0).startContainer : null;
   const here = (at?.nodeType === 1 ? at as Element : at?.parentElement) ?? document.activeElement;
-  const el = reviewActions.contains(document.activeElement) ? actionsFor : reviewBlockAt(here?.closest("[data-inplace-ui]") ? document.activeElement : here);
+  const el = reviewActions.contains(document.activeElement) ? actionsFor : reviewBlockAt(here?.closest("[data-pearwrite-ui]") ? document.activeElement : here);
   const p = toReviewFor(el?.dataset.id);
   if (!p) return;
   e.preventDefault();
@@ -235,7 +235,7 @@ async function copyWithoutChanges(how: "print" | "download") {
     link.remove();
   }
   try {
-    copyLeft = (await (await fetch("/__inplace/without-changes")).json()).left;
+    copyLeft = (await (await fetch("/__pearwrite/without-changes")).json()).left;
   } catch {
     copyLeft = null;
   }

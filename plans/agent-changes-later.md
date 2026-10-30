@@ -4,5 +4,5 @@ Keep and Undo for each block the agent changed are done (see "Reviewing what the
 
 ## Open questions
 
-- Should the user's own changes be reviewable too, for a document two people edit? [Who wrote what](../README.md) shows who changed what, and a person can undo their own typing. Revisit with accounts in inplace cloud.
+- Should the user's own changes be reviewable too, for a document two people edit? [Who wrote what](../README.md) shows who changed what, and a person can undo their own typing. Revisit with accounts in pearwrite-webapp.
 - Should a block the user has edited after the agent count as kept? For now it stays pending, so the user can still undo just the agent's words. See how that feels in use.

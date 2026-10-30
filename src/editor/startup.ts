@@ -4,7 +4,7 @@ if (reopenChanges) openChanges();
 overlay.addEventListener("click", (e) => { if (e.target === overlay) closeStash(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && overlay.classList.contains("open")) closeStash(); });
 
-const events = new EventSource("/__inplace/events");
+const events = new EventSource("/__pearwrite/events");
 events.addEventListener("stash", (e) => showStashCount(Number(e.data)));
 events.addEventListener("agent", (e) => showAgentStatus(e.data));
 events.addEventListener("comments", () => loadComments());
@@ -17,7 +17,7 @@ events.addEventListener("version", (e) => {
 events.onerror = () => showStatus("Lost connection to the editor server. Reconnecting…", "error", true);
 events.onopen = () => { if (pill.dataset.kind === "error" && pill.textContent.startsWith("Lost")) showStatus("Reconnected"); };
 
-// A page that shows this document in a frame, such as inplace cloud, can ask it to print itself.
+// A page that shows this document in a frame, such as pearwrite-webapp, can ask it to print itself.
 window.addEventListener("message", (e) => {
-  if (e.source === window.parent && window.parent !== window && (e.data as { type?: unknown } | null)?.type === "inplace:print") window.print();
+  if (e.source === window.parent && window.parent !== window && (e.data as { type?: unknown } | null)?.type === "pearwrite:print") window.print();
 });

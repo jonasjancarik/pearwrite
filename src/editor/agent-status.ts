@@ -26,8 +26,8 @@ function showAgentStatus(data: string) {
 
 // --- a mark beside each block the agent has picked up: an eye, then a check that fades ---
 // They sit in a layer of their own, never inside a block, so they can't end up in the file.
-const seenLayer = make("div", { id: "inplace-seen-layer" });
-seenLayer.dataset.inplaceUi = "";
+const seenLayer = make("div", { id: "pearwrite-seen-layer" });
+seenLayer.dataset.pearwriteUi = "";
 document.body.append(seenLayer);
 const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
   '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -35,7 +35,7 @@ const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke
   '<path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 // How long a mark that fades stays up; "picked" stays until the agent is done.
 const SEEN_SHOWN_MS = { sent: 6000, done: 2500 };
-type SeenMarker = HTMLSpanElement & { inplaceTarget: Element };
+type SeenMarker = HTMLSpanElement & { pearwriteTarget: Element };
 let seenTimers: number[] = [];
 
 function fadeSeen(marker: Element) {
@@ -68,7 +68,7 @@ function showSeen(seen: SeenPause[]) {
       seenLayer.append(marker);
       requestAnimationFrame(() => requestAnimationFrame(() => marker!.classList.remove("new")));
     }
-    marker.inplaceTarget = el;
+    marker.pearwriteTarget = el;
     if (marker.dataset.mark !== p.mark) {
       marker.dataset.mark = p.mark;
       marker.innerHTML = p.mark === "done" ? CHECK : EYE;
@@ -83,13 +83,13 @@ function showSeen(seen: SeenPause[]) {
 // At the block's top right corner, next to its comment marker if it has one.
 function positionSeen() {
   const commented = new Map<Element, Element>();
-  for (const c of document.querySelectorAll<HTMLElement & { inplaceTarget?: Element }>("#inplace-comment-layer .marker"))
-    if (c.inplaceTarget) commented.set(c.inplaceTarget, c);
+  for (const c of document.querySelectorAll<HTMLElement & { pearwriteTarget?: Element }>("#pearwrite-comment-layer .marker"))
+    if (c.pearwriteTarget) commented.set(c.pearwriteTarget, c);
   for (const marker of seenLayer.children as HTMLCollectionOf<SeenMarker>) {
-    const r = marker.inplaceTarget.getBoundingClientRect();
-    const hidden = !marker.inplaceTarget.isConnected || r.bottom < 0 || r.top > innerHeight || (!r.width && !r.height);
+    const r = marker.pearwriteTarget.getBoundingClientRect();
+    const hidden = !marker.pearwriteTarget.isConnected || r.bottom < 0 || r.top > innerHeight || (!r.width && !r.height);
     marker.style.display = hidden ? "none" : "";
-    const beside = commented.get(marker.inplaceTarget)?.getBoundingClientRect().width;
+    const beside = commented.get(marker.pearwriteTarget)?.getBoundingClientRect().width;
     marker.style.left = `${Math.min(innerWidth - 24, r.right + 4 + (beside ? beside + 4 : 0))}px`;
     marker.style.top = `${Math.max(4, r.top - 2)}px`;
   }

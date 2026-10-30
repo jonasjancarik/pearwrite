@@ -123,7 +123,7 @@ export class CommentStore {
   /**
    * A line saying which comments are still open from an earlier run, so an agent that has just
    * started (perhaps a different one) handles them; undefined when there are none. `command`
-   * is how this agent reads them in full, such as `inplace comments`.
+   * is how this agent reads them in full, such as `pearwrite comments`.
    */
   stillOpen(command: string): string | undefined {
     const open = this.list(false);

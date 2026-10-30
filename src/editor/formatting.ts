@@ -19,7 +19,7 @@ function checkLinkStyle(a: Element | null = document.querySelector("[data-id][co
   linksChecked = true;
   const own = getComputedStyle(a);
   if (own.color === getComputedStyle(a.parentElement).color && !own.textDecorationLine.includes("underline")) {
-    document.documentElement.classList.add("inplace-plain-links");
+    document.documentElement.classList.add("pearwrite-plain-links");
   }
 }
 checkLinkStyle();
@@ -187,8 +187,8 @@ async function retag(el: HTMLElement, to: string) {
 }
 
 const formatToolbar = document.createElement("div");
-formatToolbar.id = "inplace-toolbar";
-formatToolbar.dataset.inplaceUi = "";
+formatToolbar.id = "pearwrite-toolbar";
+formatToolbar.dataset.pearwriteUi = "";
 formatToolbar.innerHTML = `
   <button type="button" data-format="bold" title="Bold (${MOD}B)"><b>B</b></button>
   <button type="button" data-format="italic" title="Italic (${MOD}I)"><i>I</i></button>
@@ -299,7 +299,7 @@ function updateCommentToolbar() {
   if (range) trimOutsideUi(range);
   const node = range?.commonAncestorContainer;
   const inText = (node?.nodeType === 1 ? node as Element : node?.parentElement)?.closest?.("[data-id]");
-  if (!range || !inText || inText.closest("[data-inplace-ui]")) {
+  if (!range || !inText || inText.closest("[data-pearwrite-ui]")) {
     formatToolbar.style.display = "none";
     return;
   }

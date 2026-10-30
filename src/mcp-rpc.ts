@@ -46,7 +46,7 @@ export function mcpHandler(backend: McpBackend) {
         return {
           protocolVersion: PROTOCOL_VERSIONS.includes(asked) ? asked : PROTOCOL_VERSIONS[0],
           capabilities: backend.channels ? { tools: {}, experimental: { "claude/channel": {} } } : { tools: {} },
-          serverInfo: { name: "inplace", version: VERSION },
+          serverInfo: { name: "pearwrite", version: VERSION },
           instructions: backend.instructions,
         };
       }

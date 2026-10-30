@@ -1,4 +1,4 @@
-// --- review mode: every change since inplace started, shown in the page ---
+// --- review mode: every change since Pearwrite started, shown in the page ---
 // A read-only view: the old words are put into the page crossed out, so
 // editing is paused while it's on, and leaving reloads the page.
 const REVIEW_KEY = `${STATE_KEY}:review`; // "agent" or "all" while review mode is on
@@ -6,8 +6,8 @@ function reviewScope() {
   try { return sessionStorage.getItem(`${STATE_KEY}:review`); } catch { return null; } // also before REVIEW_KEY is set
 }
 let reviewing = false;
-const reviewLayer = make("div", { id: "inplace-review-layer" });
-reviewLayer.dataset.inplaceUi = "";
+const reviewLayer = make("div", { id: "pearwrite-review-layer" });
+reviewLayer.dataset.pearwriteUi = "";
 
 interface CombinedChange extends BlockChange {
   moved: boolean;
@@ -48,7 +48,7 @@ function reviewTextNodes(el: Node) {
   const nodes: [Text, number][] = [];
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode() as Text | null, pos = 0; n; n = walker.nextNode() as Text | null) {
-    if (n.parentElement!.closest(".inplace-del")) continue;
+    if (n.parentElement!.closest(".pearwrite-del")) continue;
     nodes.push([n, pos]);
     pos += n.data.length;
   }
@@ -90,19 +90,19 @@ function markWords(el: HTMLElement, before: string) {
       textAt(el, from);
       for (const [n, pos] of reviewTextNodes(el)) {
         if (pos < from || pos >= to || !n.data.length) continue;
-        const ins = make("ins", { className: "inplace-ins" });
-        ins.dataset.inplaceUi = "";
+        const ins = make("ins", { className: "pearwrite-ins" });
+        ins.dataset.pearwriteUi = "";
         n.before(ins);
         ins.append(n);
         first ??= ins;
       }
     }
     if (!gone) continue;
-    const del = make("del", { className: "inplace-del", textContent: clipText(gone, 400) });
-    del.dataset.inplaceUi = "";
+    const del = make("del", { className: "pearwrite-del", textContent: clipText(gone, 400) });
+    del.dataset.pearwriteUi = "";
     // The space between the old and new words isn't in the file either.
     const gap = make("span", { textContent: " " });
-    gap.dataset.inplaceUi = "";
+    gap.dataset.pearwriteUi = "";
     const spot = first ?? textAt(el, from);
     if (spot) spot.before(del, gap);
     else el.append(gap, del);
@@ -113,7 +113,7 @@ const article = (word: string) => (/^[aeiou]/.test(word) ? "an" : "a");
 /** A label next to a block in review mode, with the block it belongs to. */
 type ReviewLabel = HTMLSpanElement & { block: Element };
 function reviewLabel(el: Element, lines: string[]) {
-  const label = make("span", { className: "inplace-review-label" });
+  const label = make("span", { className: "pearwrite-review-label" });
   for (const line of lines) label.append(make("span", { textContent: line }));
   reviewLayer.append(label);
   (label as ReviewLabel).block = el;
@@ -131,10 +131,10 @@ function placeLabels() {
 // The old text of a removed block, where the block used to be.
 function ghost(change: CombinedChange) {
   const tag = (/^(li|dt|dd|tr)$/.test(change.tag) ? change.tag : "div") as "li" | "dt" | "dd" | "tr" | "div";
-  const node = make(tag, { className: "inplace-ghost" });
-  node.dataset.inplaceUi = "";
+  const node = make(tag, { className: "pearwrite-ghost" });
+  node.dataset.pearwriteUi = "";
   node.dataset.ghost = change.id;
-  const del = make("del", { className: "inplace-del", textContent: clipText(change.before || "", 400) });
+  const del = make("del", { className: "pearwrite-del", textContent: clipText(change.before || "", 400) });
   if (tag === "tr") node.append(make("td", { colSpan: 99 }, del));
   else node.append(del);
   return node;
@@ -155,10 +155,10 @@ async function enterReview(scope: string) {
   hideTip();
   // The arrival highlights would mix with the marks.
   pill.style.display = "none";
-  for (const el of document.querySelectorAll(".inplace-changed, .inplace-changed-fade, .inplace-changed-words"))
-    el.classList.remove("inplace-changed", "inplace-changed-fade", "inplace-changed-words");
-  for (const name of [...(window.CSS?.highlights?.keys() ?? [])]) if (name.startsWith("inplace-words-")) CSS.highlights.delete(name);
-  document.documentElement.classList.add("inplace-reviewing");
+  for (const el of document.querySelectorAll(".pearwrite-changed, .pearwrite-changed-fade, .pearwrite-changed-words"))
+    el.classList.remove("pearwrite-changed", "pearwrite-changed-fade", "pearwrite-changed-words");
+  for (const name of [...(window.CSS?.highlights?.keys() ?? [])]) if (name.startsWith("pearwrite-words-")) CSS.highlights.delete(name);
+  document.documentElement.classList.add("pearwrite-reviewing");
   await loadHistory();
 
   const find = (id: string | undefined) => id && (document.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`) ||
@@ -175,7 +175,7 @@ async function enterReview(scope: string) {
     const el = find(id);
     if (!el || el.dataset.ghost) continue;
     if (change.kind === "added") {
-      el.classList.add("inplace-review-new");
+      el.classList.add("pearwrite-review-new");
       continue;
     }
     const lines: string[] = [];
@@ -190,17 +190,17 @@ async function enterReview(scope: string) {
     try { sessionStorage.setItem(REVIEW_KEY, only.checked ? "agent" : "all"); } catch {}
     reloadAsIs();
   } });
-  const bar = make("div", { id: "inplace-review-bar", role: "region", ariaLabel: "What changed" },
-    make("span", { className: "what", textContent: "Showing what changed since inplace started. Editing is paused." }),
+  const bar = make("div", { id: "pearwrite-review-bar", role: "region", ariaLabel: "What changed" },
+    make("span", { className: "what", textContent: "Showing what changed since Pearwrite started. Editing is paused." }),
     make("label", {}, only, "Only the agent’s changes"),
     make("button", { type: "button", textContent: "Done", onclick: leaveReview }));
-  bar.dataset.inplaceUi = "";
+  bar.dataset.pearwriteUi = "";
   if (leftOver.length) {
     bar.append(make("p", { className: "removed" }, "Also removed: ",
       ...leftOver.flatMap((c, i) => [i ? " " : "", make("del", { textContent: clipText(c.before || "", 160) })])));
   }
-  const spacer = make("div", { id: "inplace-review-spacer" });
-  spacer.dataset.inplaceUi = "";
+  const spacer = make("div", { id: "pearwrite-review-spacer" });
+  spacer.dataset.pearwriteUi = "";
   document.body.prepend(spacer);
   document.body.append(bar, reviewLayer);
   spacer.style.height = `${bar.offsetHeight}px`;
@@ -211,7 +211,7 @@ async function enterReview(scope: string) {
 // Reload keeping the scroll position and the open list, but without
 // comparing blocks, which now hold the marks.
 function reloadAsIs() {
-  const spacer = document.getElementById("inplace-review-spacer");
+  const spacer = document.getElementById("pearwrite-review-spacer");
   try {
     sessionStorage.setItem(STATE_KEY, JSON.stringify({ x: scrollX, y: Math.max(0, scrollY - (spacer?.offsetHeight ?? 0)),
       changes: changesPanel.classList.contains("open") }));

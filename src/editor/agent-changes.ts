@@ -77,7 +77,7 @@ function showChanges(before: BlockPrint[], skip: Set<string>, quiet: boolean, ea
   for (const el of marks) {
     const id = el.dataset.id!;
     if (!(old.has(id) && texts[id] !== undefined && tintWords(el, texts[id]))) {
-      el.classList.add("inplace-changed");
+      el.classList.add("pearwrite-changed");
       if (old.has(id) && texts[id] !== undefined) rememberRewritten(el, texts[id]);
     }
     if (inView(el) && !document.hidden) {
@@ -95,9 +95,9 @@ function showChanges(before: BlockPrint[], skip: Set<string>, quiet: boolean, ea
 function reveal(el: Element) {
   const words = wordChanges.get(el);
   if (words) {
-    el.classList.remove("inplace-changed-words");
+    el.classList.remove("pearwrite-changed-words");
     fadeWords(words);
-  } else el.classList.replace("inplace-changed", "inplace-changed-fade");
+  } else el.classList.replace("pearwrite-changed", "pearwrite-changed-fade");
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const boxes = words
     ? words.ranges.flatMap((range) => [...range.getClientRects()]).filter((b) => b.width > 0)
@@ -112,9 +112,9 @@ function reveal(el: Element) {
     const along = Math.random();
     const dot = i % 3 === 2;
     const size = dot ? 2 + Math.random() * 2.5 : 7 + Math.random() * 9;
-    const spark = make("span", { className: dot ? "inplace-sparkle dot" : "inplace-sparkle" });
+    const spark = make("span", { className: dot ? "pearwrite-sparkle dot" : "pearwrite-sparkle" });
     if (!dot) spark.innerHTML = STAR;
-    spark.dataset.inplaceUi = "";
+    spark.dataset.pearwriteUi = "";
     const edge = Math.random();
     const y = edge < 0.45 ? r.top : edge < 0.9 ? r.bottom : r.top + Math.random() * r.height;
     Object.assign(spark.style, {
@@ -134,20 +134,20 @@ function reveal(el: Element) {
 }
 // Once the fade has run, the block goes back to how the document styles it.
 document.addEventListener("animationend", (e) => {
-  if (e.animationName === "inplace-fade") (e.target as Element).classList?.remove("inplace-changed-fade");
+  if (e.animationName === "pearwrite-fade") (e.target as Element).classList?.remove("pearwrite-changed-fade");
 });
 
 // Show a block's change again, as when it first appeared. With the text from
 // before the change, only the changed words light up.
 function replay(el: HTMLElement, before: string | undefined, by: "agent" | "you") {
-  el.classList.remove("inplace-changed", "inplace-changed-fade", "inplace-changed-words");
+  el.classList.remove("pearwrite-changed", "pearwrite-changed-fade", "pearwrite-changed-words");
   const words = wordChanges.get(el);
   if (words) clearWords(el, words);
   rewritten.delete(el);
   hideTip();
   void el.offsetWidth;
   if (before === undefined || !tintWords(el, before, by)) {
-    el.classList.add("inplace-changed");
+    el.classList.add("pearwrite-changed");
     if (before !== undefined) rememberRewritten(el, before);
   }
   reveal(el);

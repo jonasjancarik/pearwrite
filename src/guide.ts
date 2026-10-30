@@ -43,6 +43,6 @@ export function agentGuide(topic?: string): string {
   }
   const more = Object.entries(ON_REQUEST).map(([name, about]) => `- ${name}: ${about}`).join("\n");
   return parts.filter((s) => !(s.topic in ON_REQUEST)).map((s) => s.text).join("").trimEnd() + "\n\n## More when you need it\n\n" +
-    "These parts of the guide are left out above. Read one when it comes up with `inplace guide <topic>` (MCP: the guide " +
+    "These parts of the guide are left out above. Read one when it comes up with `pearwrite guide <topic>` (MCP: the guide " +
     "tool), and read any other part the same way when you need it again, such as after a long conversation:\n\n" + more + "\n";
 }

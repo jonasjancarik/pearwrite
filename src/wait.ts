@@ -1,5 +1,5 @@
-// Let an agent block until the user pauses (`inplace wait`, `wait_for_edits`),
-// for agents that have no other way to be woken by inplace's output.
+// Let an agent block until the user pauses (`pearwrite wait`, `wait_for_edits`),
+// for agents that have no other way to be woken by Pearwrite's output.
 
 /** What a wait returns: the change lines up to and including the latest pause, and where to continue from. */
 export interface PauseBatch {
@@ -13,7 +13,7 @@ export interface PauseBatch {
  * comes between two waits is never missed and lines are never repeated.
  *
  * The numbers count on from the time in milliseconds when the feed started, far faster
- * than lines come, so a number handed out before inplace restarted is lower than any this
+ * than lines come, so a number handed out before Pearwrite restarted is lower than any this
  * feed hands out, and a wait that passes one gets everything since the restart instead of
  * waiting for the count to catch up.
  */
@@ -51,7 +51,7 @@ export class ChangeFeed {
     const from = after === 0 || restarted ? this.start : after;
     const lines = this.entries.filter((e) => e.n > from).map((e) => e.line);
     if (restarted) {
-      lines.unshift("(inplace restarted since your last call, so changes from before the restart may be missing; read the document to catch up)");
+      lines.unshift("(Pearwrite restarted since your last call, so changes from before the restart may be missing; read the document to catch up)");
     } else if (this.entries.length && this.entries[0].n > from + 1) {
       lines.unshift("(older changes are no longer kept here; read the document to catch up)");
     }
@@ -76,8 +76,8 @@ export class ChangeFeed {
    * if there's no pause yet.
    */
   take(after: number): PauseBatch | null {
-    // A number this feed never handed out comes from before inplace restarted (or from
-    // another inplace): start from this feed's first line, and say so.
+    // A number this feed never handed out comes from before Pearwrite restarted (or from
+    // another Pearwrite): start from this feed's first line, and say so.
     const restarted = after !== 0 && (after < this.start || after > this.last);
     const from = after === 0 || restarted ? this.start : after;
     const newer = this.entries.filter((e) => e.n > from);
@@ -85,7 +85,7 @@ export class ChangeFeed {
     if (end === -1) return null;
     const lines = newer.slice(0, end + 1).map((e) => e.line);
     if (restarted) {
-      lines.unshift("(inplace restarted since your last wait, so changes from before the restart may be missing; read the document to catch up)");
+      lines.unshift("(Pearwrite restarted since your last wait, so changes from before the restart may be missing; read the document to catch up)");
     } else if (this.entries.length && this.entries[0].n > from + 1) {
       // Only the last `keep` lines are kept; say so rather than pretend nothing happened.
       lines.unshift("(older changes are no longer kept here; read the document to catch up)");
@@ -122,16 +122,16 @@ export class ChangeFeed {
 }
 
 /**
- * The note an agent gets mid-task about what `news` returned (`inplace pending`, the Codex
+ * The note an agent gets mid-task about what `news` returned (`pearwrite pending`, the Codex
  * hook), or undefined when there's nothing. `port` names a port other than the default, for the
- * agent's next inplace command.
+ * agent's next Pearwrite command.
  */
 export function newsNote(lines: string[], port?: number): string | undefined {
   if (!lines.length) return undefined;
   return [
-    `inplace${port && port !== 8765 ? ` (on --port ${port})` : ""}: while you were working, the user did this on the page:`,
+    `pearwrite${port && port !== 8765 ? ` (on --port ${port})` : ""}: while you were working, the user did this on the page:`,
     ...lines.map((line) => `  ${line}`),
     "Finish the step you're on, then deal with new comments as usual and mark each one done when you have. " +
-      "Your next inplace wait (or wait_for_edits) still returns these edits in full, so act on them now only if they touch what you're changing.",
+      "Your next pearwrite wait (or wait_for_edits) still returns these edits in full, so act on them now only if they touch what you're changing.",
   ].join("\n");
 }

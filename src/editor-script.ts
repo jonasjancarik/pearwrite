@@ -37,10 +37,10 @@ export const EDITOR_PARTS = [
   "startup",
 ];
 
-const HEADER = `// In-place editing for one HTML document served by \`inplace\`.
+const HEADER = `// In-place editing for one HTML document served by \`pearwrite\`.
 // Only blocks the server marked with data-id are editable, and only their text:
 // structure, styling and generated parts stay as they are in the file.
-// Built from src/editor/*.ts in the inplace repository.
+// Built from src/editor/*.ts in the Pearwrite repository.
 `;
 
 /** The compiled parts of the editor as one classic script. */

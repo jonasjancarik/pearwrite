@@ -48,13 +48,13 @@ async function reload(skip: string[] = []) {
   const blocks = [...document.querySelectorAll<HTMLElement>("[data-id]")].map((el): BlockPrint =>
     [el.dataset.id!, fingerprint(el), el.parentElement?.closest<HTMLElement>("[data-id]")?.dataset.id]);
   // Changes the user hasn't seen yet stay marked after the next reload.
-  const unseen = [...document.querySelectorAll<HTMLElement>("[data-id].inplace-changed, [data-id].inplace-changed-words")]
+  const unseen = [...document.querySelectorAll<HTMLElement>("[data-id].pearwrite-changed, [data-id].pearwrite-changed-words")]
     .map((el) => el.dataset.id);
   // The text of each paragraph, so the changed words can be found after the
   // reload. For changes not seen yet, the text from before those changes.
   const texts: Record<string, string> = {};
   for (const el of document.querySelectorAll<HTMLElement>("[data-id][contenteditable]"))
-    texts[el.dataset.id!] = el.classList.contains("inplace-changed-words") ? wordChanges.get(el)!.before : el.textContent!;
+    texts[el.dataset.id!] = el.classList.contains("pearwrite-changed-words") ? wordChanges.get(el)!.before : el.textContent!;
   try {
     sessionStorage.setItem(STATE_KEY, JSON.stringify({ x: scrollX, y: scrollY, focus: active?.dataset.id, blocks, skip, unseen,
       texts, changes: changesPanel.classList.contains("open") }));
@@ -84,7 +84,7 @@ function restore() {
   try { conflict = JSON.parse(sessionStorage.getItem(`${STATE_KEY}:conflict`) || "null"); sessionStorage.removeItem(`${STATE_KEY}:conflict`); } catch {}
   if (conflict) {
     const el = document.querySelector(`[data-id="${CSS.escape(conflict.id)}"]`);
-    el?.classList.add("inplace-conflict");
+    el?.classList.add("pearwrite-conflict");
     showStatus("The highlighted paragraph shows your agent\u2019s version. Yours is under \u201cSet aside\u201d at the bottom left.", "error", true);
   }
   if (state?.blocks) showChanges(state.blocks, new Set([...(state.skip || []), ...(conflict ? [conflict.id] : [])]), !!conflict, state.unseen || [], state.texts || {});

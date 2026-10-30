@@ -10,7 +10,7 @@ const ROOT = resolve(import.meta.dirname, "..");
 export const CLI = join(ROOT, "dist", "src", "cli.js");
 export const EXAMPLE = join(ROOT, "examples", "garden-proposal.html");
 // The servers these tests start keep comments and the rest here, not in the user's own folder.
-process.env.INPLACE_STATE_DIR ??= mkdtempSync(join(tmpdir(), "inplace-state-"));
+process.env.PEARWRITE_STATE_DIR ??= mkdtempSync(join(tmpdir(), "pearwrite-state-"));
 
 function freePort(): Promise<number> {
   return new Promise((ok, fail) => {
@@ -23,7 +23,7 @@ function freePort(): Promise<number> {
   });
 }
 
-/** One running inplace server on a private copy of a document. */
+/** One running Pearwrite server on a private copy of a document. */
 export class Doc {
   output = "";
   constructor(readonly path: string, readonly url: string, private proc: ChildProcess) {
@@ -48,7 +48,7 @@ export class Doc {
 }
 
 export async function startDoc(source = EXAMPLE, html?: string, args: string[] = []): Promise<Doc> {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-e2e-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-e2e-"));
   const path = join(dir, "doc.html");
   if (html !== undefined) writeFileSync(path, html);
   else copyFileSync(source, path);
@@ -75,7 +75,7 @@ export const test = base.extend<{ doc: Doc; editor: Page }>({
   // A page with the editor loaded and the server's live-reload stream connected.
   editor: async ({ page, doc }, use) => {
     await page.goto(doc.url);
-    await page.waitForFunction(() => document.querySelector("#inplace-toolbar"));
+    await page.waitForFunction(() => document.querySelector("#pearwrite-toolbar"));
     await use(page);
   },
 });

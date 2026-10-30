@@ -95,7 +95,7 @@ interface SeenPause {
   age: number;
 }
 
-/** The JSON reply to a POST to /__inplace/<action>; which fields are set depends on the action. */
+/** The JSON reply to a POST to /__pearwrite/<action>; which fields are set depends on the action. */
 interface Reply {
   version?: string;
   merged?: boolean;
@@ -114,7 +114,7 @@ interface QuoteContext {
   suffix: string;
 }
 
-/** The comment anchoring helpers the page imports from /__inplace/anchor.js, compiled from src/anchor.ts. */
+/** The comment anchoring helpers the page imports from /__pearwrite/anchor.js, compiled from src/anchor.ts. */
 interface Anchoring {
   buildContext(text: string, start: number, end: number): QuoteContext;
   findQuote(text: string, ctx: QuoteContext): { start: number; end: number; exact: boolean } | null;

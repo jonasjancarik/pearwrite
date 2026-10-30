@@ -11,7 +11,7 @@ import { Document } from "../src/server.js";
 const strip = (line: string) => line.replace(/^\d\d:\d\d:\d\d /, "");
 
 test("adds, edits, resolves and deletes comments, with one change line each", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-comments-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const lines: [string, boolean][] = [];
   const store = new CommentStore(join(dir, "comments.json"), (line, byUser) => lines.push([strip(line), byUser]));
   const first = store.add({ id: "p-7", text: "Say how many beds\neach floor gets.", quote: "raised beds are shared", prefix: "The ", suffix: "." });
@@ -40,7 +40,7 @@ test("adds, edits, resolves and deletes comments, with one change line each", ()
 });
 
 test("long comments are clipped in the change line but kept whole", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-comments-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const lines: string[] = [];
   const store = new CommentStore(join(dir, "comments.json"), (line) => lines.push(line));
   const text = "word ".repeat(200).trim();
@@ -51,7 +51,7 @@ test("long comments are clipped in the change line but kept whole", () => {
 });
 
 test("comments survive a restart, and numbers are never reused", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-comments-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Hello</p></body></html>');
   const doc = new Document(path, true, () => {}, dir);
@@ -68,7 +68,7 @@ test("comments survive a restart, and numbers are never reused", () => {
 });
 
 test("lists the comments still open from an earlier run, for the agent that opens the document next", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-comments-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const store = new CommentStore(join(dir, "comments.json"));
   assert.equal(store.stillOpen("get_comments"), undefined);
   store.add({ id: "p-1", text: "One" });
@@ -89,7 +89,7 @@ test("lists the comments still open from an earlier run, for the agent that open
 });
 
 test("the agent's comments are answered or dismissed by the user, never edited or deleted", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-comments-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const lines: [string, boolean][] = [];
   const store = new CommentStore(join(dir, "comments.json"), (line, byUser) => lines.push([strip(line), byUser]));
   store.add({ id: "td-4", text: "results.csv has 1,240.", quote: "1,420", prefix: "", suffix: "", by: AGENT });

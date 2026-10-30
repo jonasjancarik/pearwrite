@@ -8,7 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 
 import { documentIdOf, withDocumentId } from "../src/htmldoc.js";
-import { createInplaceHandler, Document, FileStore, MemoryStore } from "../src/index.js";
+import { createPearwriteHandler, Document, FileStore, MemoryStore } from "../src/index.js";
 
 test("a document kept in a host's own store is edited, commented on and served under the host's names", async () => {
   const saved: string[] = [];
@@ -16,7 +16,7 @@ test("a document kept in a host's own store is edited, commented on and served u
   const store = new MemoryStore("report.html", '<html><body><p data-id="p-1">Hello</p></body></html>', {},
     (text) => saved.push(text), (key, json) => (side[key] = json));
   const doc = new Document(store);
-  const server = createServer(createInplaceHandler(doc, { hostAllowed: (host) => host === "d1.docs.example.com" }));
+  const server = createServer(createPearwriteHandler(doc, { hostAllowed: (host) => host === "d1.docs.example.com" }));
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   const port = (server.address() as AddressInfo).port;
   const send = (method: string, path: string, host: string, body?: string) =>
@@ -35,10 +35,10 @@ test("a document kept in a host's own store is edited, commented on and served u
     const page = await send("GET", "/", "d1.docs.example.com");
     assert.equal(page.status, 200);
     assert.match(page.body, /data-file="report\.html"/);
-    const edit = await send("POST", "/__inplace/save", "d1.docs.example.com", JSON.stringify({ id: "p-1", old: "Hello", new: "Hello there" }));
+    const edit = await send("POST", "/__pearwrite/save", "d1.docs.example.com", JSON.stringify({ id: "p-1", old: "Hello", new: "Hello there" }));
     assert.equal(edit.status, 200, edit.body);
     assert.match(saved.at(-1)!, /<p data-id="p-1">Hello there<\/p>/);
-    const comment = await send("POST", "/__inplace/comment", "d1.docs.example.com", JSON.stringify({ action: "add", id: "p-1", text: "Shorter?" }));
+    const comment = await send("POST", "/__pearwrite/comment", "d1.docs.example.com", JSON.stringify({ action: "add", id: "p-1", text: "Shorter?" }));
     assert.equal(comment.status, 200, comment.body);
     assert.equal(JSON.parse(side.comments).comments[0].text, "Shorter?");
     assert.equal((await send("GET", "/logo.png", "d1.docs.example.com")).status, 404, "a store without a folder serves no files");
@@ -50,13 +50,13 @@ test("a document kept in a host's own store is edited, commented on and served u
 });
 
 test("comments follow a document when it's moved, and a copy gets its own", () => {
-  const side = mkdtempSync(join(tmpdir(), "inplace-side-"));
-  const dir = mkdtempSync(join(tmpdir(), "inplace-move-"));
+  const side = mkdtempSync(join(tmpdir(), "pearwrite-side-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-move-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, "<!doctype html><html><head><title>Plan</title></head><body><p>Ten trees</p></body></html>");
   const doc = new Document(path, true, () => {}, side);
   doc.load();
-  assert.match(readFileSync(path, "utf8"), /<head><meta name="inplace-id" content="[0-9a-f]{12}"><title>/);
+  assert.match(readFileSync(path, "utf8"), /<head><meta name="pearwrite-id" content="[0-9a-f]{12}"><title>/);
   doc.comments.add({ id: "p-1", text: "Name the trees." });
 
   const moved = join(dir, "renamed.html");
@@ -77,12 +77,12 @@ test("comments follow a document when it's moved, and a copy gets its own", () =
 
 test("the id goes where the parser puts the head, and is put back if it's removed", () => {
   assert.equal(withDocumentId("<!doctype html><body><p>Hi</p></body>", "abc"),
-    '<!doctype html><meta name="inplace-id" content="abc"><body><p>Hi</p></body>');
-  assert.equal(withDocumentId("<html><body>x</body></html>", "abc"), '<html><meta name="inplace-id" content="abc"><body>x</body></html>');
-  assert.equal(withDocumentId('<head><meta name="inplace-id" content="old"></head>', "new"), '<head><meta name="inplace-id" content="new"></head>');
+    '<!doctype html><meta name="pearwrite-id" content="abc"><body><p>Hi</p></body>');
+  assert.equal(withDocumentId("<html><body>x</body></html>", "abc"), '<html><meta name="pearwrite-id" content="abc"><body>x</body></html>');
+  assert.equal(withDocumentId('<head><meta name="pearwrite-id" content="old"></head>', "new"), '<head><meta name="pearwrite-id" content="new"></head>');
 
-  const side = mkdtempSync(join(tmpdir(), "inplace-side-"));
-  const path = join(mkdtempSync(join(tmpdir(), "inplace-meta-")), "doc.html");
+  const side = mkdtempSync(join(tmpdir(), "pearwrite-side-"));
+  const path = join(mkdtempSync(join(tmpdir(), "pearwrite-meta-")), "doc.html");
   writeFileSync(path, "<!doctype html><head></head><body><p>Ten trees</p></body>");
   const doc = new Document(path, true, () => {}, side);
   doc.load();
@@ -93,8 +93,8 @@ test("the id goes where the parser puts the head, and is put back if it's remove
 });
 
 test("without ids written, comments are found by the file's real path, also through a link", () => {
-  const side = mkdtempSync(join(tmpdir(), "inplace-side-"));
-  const dir = mkdtempSync(join(tmpdir(), "inplace-link-"));
+  const side = mkdtempSync(join(tmpdir(), "pearwrite-side-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-link-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, "<!doctype html><body><p data-id=\"p-1\">Ten trees</p></body>");
   new Document(path, false, () => {}, side).comments.add({ id: "p-1", text: "Name the trees." });
@@ -104,14 +104,14 @@ test("without ids written, comments are found by the file's real path, also thro
   assert.equal(documentIdOf(readFileSync(path, "utf8")), undefined, "nothing written");
 });
 
-test("comments kept in the temporary folder by an older inplace move to the new place", () => {
-  const path = join(mkdtempSync(join(tmpdir(), "inplace-old-")), "doc.html");
+test("comments kept in the temporary folder by an older Pearwrite move to the new place", () => {
+  const path = join(mkdtempSync(join(tmpdir(), "pearwrite-old-")), "doc.html");
   writeFileSync(path, "<!doctype html><body><p data-id=\"p-1\">Ten trees</p></body>");
-  const old = join(tmpdir(), "inplace", `comments-${createHash("sha1").update(resolve(path)).digest("hex").slice(0, 12)}.json`);
+  const old = join(tmpdir(), "pearwrite", `comments-${createHash("sha1").update(resolve(path)).digest("hex").slice(0, 12)}.json`);
   mkdirSync(dirname(old), { recursive: true });
   writeFileSync(old, JSON.stringify({ last: 1, comments: [{ n: 1, id: "p-1", text: "Name the trees.", status: "open", created: "" }] }));
   const doc = new Document(path);
   assert.deepEqual(doc.comments.list().map((c) => c.text), ["Name the trees."]);
   assert.ok(!existsSync(old));
-  assert.ok((doc.store as FileStore).sidePath("comments").startsWith(process.env.INPLACE_STATE_DIR!));
+  assert.ok((doc.store as FileStore).sidePath("comments").startsWith(process.env.PEARWRITE_STATE_DIR!));
 });

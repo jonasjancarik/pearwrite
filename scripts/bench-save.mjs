@@ -25,7 +25,7 @@ const body = [
   ...Array.from({ length: rows }, (_, i) => `<tr><td>Row ${i}</td><td>${i * 3}</td><td>note ${i}</td></tr>`),
   `</tbody></table>`,
 ].join("\n");
-const dir = mkdtempSync(join(tmpdir(), "inplace-bench-"));
+const dir = mkdtempSync(join(tmpdir(), "pearwrite-bench-"));
 const path = join(dir, "big.html");
 writeFileSync(path, `<!doctype html><html><head><title>Big</title></head><body>\n${body}\n</body></html>\n`);
 

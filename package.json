@@ -1,12 +1,12 @@
 {
-  "name": "inplace-html",
+  "name": "pearwrite",
   "version": "0.1.0",
   "description": "Write with your coding agent without breaking your flow: edit HTML documents your agent wrote right in the browser, and leave comments for the bigger changes.",
   "license": "MIT",
   "author": "Jonas Jancarik",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jonasjancarik/inplace.git"
+    "url": "git+https://github.com/jonasjancarik/pearwrite.git"
   },
   "type": "module",
   "exports": {
@@ -17,7 +17,7 @@
     "./package.json": "./package.json"
   },
   "bin": {
-    "inplace": "dist/src/cli.js"
+    "pearwrite": "dist/src/cli.js"
   },
   "files": [
     "dist/src",

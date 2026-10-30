@@ -5,25 +5,25 @@ import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 import { AgentStatus } from "./agent.js";
-import { addInplaceHook, codexHookHint, codexHooksPath } from "./codex.js";
+import { addPearwriteHook, codexHookHint, codexHooksPath } from "./codex.js";
 import { agentGuide } from "./guide.js";
 import { PauseCommand, PauseWatcher } from "./idle.js";
 import { newToken, runMcpHttpServer, runMcpServer } from "./mcp.js";
-import { type Access, allowedHostName, createInplaceServer, Document, serverUrls } from "./server.js";
+import { type Access, allowedHostName, createPearwriteServer, Document, serverUrls } from "./server.js";
 import { jevTagger } from "./tags.js";
 import { ChangeFeed } from "./wait.js";
 
-const USAGE = `usage: inplace <file.html> [--port 8765] [--host 127.0.0.1] [--allow-host <name>] [--no-write-ids]
+const USAGE = `usage: pearwrite <file.html> [--port 8765] [--host 127.0.0.1] [--allow-host <name>] [--no-write-ids]
                            [--comment-only | --view-only] [--pause 5] [--log <file>] [--on-pause <command>] [--no-tags]
-       inplace wait [--port 8765] [--timeout <seconds>] [--after <n>]
-       inplace pending [--port 8765]
-       inplace comments [--port 8765] [--all]
-       inplace resolve <n> [--reply <text>] [--port 8765]
-       inplace comment <data-id> <text> [--quote <text>] [--option <answer>]... [--port 8765]
-       inplace guide [<topic> | all]
-       inplace setup codex [--port 8765]
-       inplace mcp [--allow-host <name>] [--pause 5] [--log <file>] [--no-tags]
-       inplace mcp --http [--port 8766] [--host 127.0.0.1] [--token <secret>] [--allow-host <name>]
+       pearwrite wait [--port 8765] [--timeout <seconds>] [--after <n>]
+       pearwrite pending [--port 8765]
+       pearwrite comments [--port 8765] [--all]
+       pearwrite resolve <n> [--reply <text>] [--port 8765]
+       pearwrite comment <data-id> <text> [--quote <text>] [--option <answer>]... [--port 8765]
+       pearwrite guide [<topic> | all]
+       pearwrite setup codex [--port 8765]
+       pearwrite mcp [--allow-host <name>] [--pause 5] [--log <file>] [--no-tags]
+       pearwrite mcp --http [--port 8766] [--host 127.0.0.1] [--token <secret>] [--allow-host <name>]
                           [--pause 5] [--log <file>] [--no-tags]
 
 Edit an HTML document in the browser while an agent edits the same file.
@@ -38,7 +38,7 @@ Edit an HTML document in the browser while an agent edits the same file.
   --comment-only    anyone who opens the page can comment on it but not edit it; your agent
                     still edits the file. Handy with --host 0.0.0.0 to show a draft to others
   --view-only       anyone who opens the page can only read it and its comments. Your agent's
-                    own commands (inplace comment, inplace resolve) still work
+                    own commands (pearwrite comment, pearwrite resolve) still work
   --no-write-ids    don't add data-id attributes to the file
                     (blocks without one can't be edited or commented on precisely)
   --pause <s>       after this many seconds without a change on the page, print one
@@ -46,43 +46,43 @@ Edit an HTML document in the browser while an agent edits the same file.
   --log <file>      also append every change line to this file
   --on-pause <cmd>  run this shell command each time the user pauses, with that pause's
                     change lines on stdin
-  --no-tags         don't tag comments, even when $INPLACE_JEV_KEY is set. With that key, each
+  --no-tags         don't tag comments, even when $PEARWRITE_JEV_KEY is set. With that key, each
                     comment the user leaves is tagged (small fix, rewrite, content, question or
                     layout) by Jev, TypeSafe AI's classifier, which receives the comment and the
                     text of the element it's on
 
-inplace wait waits for the user's next pause in the inplace already running on --port, prints
+pearwrite wait waits for the user's next pause in the Pearwrite already running on --port, prints
 that pause's change lines and the number to pass as --after next time, as JSON, and exits. Without
 --after, it carries on from where the previous wait stopped.
 
   --timeout <s>     give up after this many seconds: print {"status":"timeout"} and exit with code 3
   --after <n>       return the lines after line n (the "next" a previous wait printed); if
-                    inplace has restarted since, the lines since the restart
+                    Pearwrite has restarted since, the lines since the restart
 
-inplace pending prints, without waiting, the comments the user left and the pauses they made since
+pearwrite pending prints, without waiting, the comments the user left and the pauses they made since
 you last waited or checked, or nothing when there's nothing new. Run it between the steps of a long
 task, or from a hook (see the README for Codex).
 
-inplace comments prints the open comments the user left on the page, as JSON (--all: also
-those marked done). inplace resolve marks comment n as done once you've dealt with it; --reply
-adds a short note the user sees under the comment. inplace comment leaves your own comment on the
+pearwrite comments prints the open comments the user left on the page, as JSON (--all: also
+those marked done). pearwrite resolve marks comment n as done once you've dealt with it; --reply
+adds a short note the user sees under the comment. pearwrite comment leaves your own comment on the
 element with that data-id, for the user to answer or dismiss; --quote puts it on those words inside
 the element, and --option (up to three times) suggests an answer the user can pick with one click.
 
-inplace guide prints the instructions an agent needs to work on a document with you, leaving out
+pearwrite guide prints the instructions an agent needs to work on a document with you, leaving out
 the parts few sessions need. Name a part to print only that one, or all to print everything.
 
-inplace setup codex adds a hook to Codex's hooks.json ($CODEX_HOME, default ~/.codex) that passes
+pearwrite setup codex adds a hook to Codex's hooks.json ($CODEX_HOME, default ~/.codex) that passes
 the user's comments to Codex after each of its tool calls, so they reach it while it's busy. It keeps
 the hooks already there, backs the file up first, and does nothing if the hook is already there.
 Codex asks you to approve the new hook before it runs it.
 
-inplace mcp runs an MCP server on stdin/stdout instead, with tools to open, read and edit a
+pearwrite mcp runs an MCP server on stdin/stdout instead, with tools to open, read and edit a
 document and read the changes, and a Claude Code channel event at each pause. Change lines go
 to stderr and the --log file.
 
   --http            serve MCP over HTTP instead, at /mcp/<token>, for use through a tunnel
-  --token <secret>  the token in that URL (default: $INPLACE_TOKEN, or a new random one)`;
+  --token <secret>  the token in that URL (default: $PEARWRITE_TOKEN, or a new random one)`;
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -118,25 +118,25 @@ if (values.help || !fits) {
 
 const pauseSeconds = Number(values.pause);
 if (!(pauseSeconds >= 0)) {
-  console.error("inplace: --pause takes a number of seconds");
+  console.error("pearwrite: --pause takes a number of seconds");
   process.exit(2);
 }
 const logPath = values.log ? resolve(values.log) : undefined;
 const allowHosts = values["allow-host"].map((value) => {
   const name = allowedHostName(value);
   if (name === null) {
-    console.error(`inplace: --allow-host takes a host name without a port, like mymac.tail1234.ts.net (got ${JSON.stringify(value)})`);
+    console.error(`pearwrite: --allow-host takes a host name without a port, like mymac.tail1234.ts.net (got ${JSON.stringify(value)})`);
     process.exit(2);
   }
   return name;
 });
 // Comment tags are opt-in: only with a key, and never with --no-tags.
-const jevKey = values["no-tags"] ? undefined : process.env.INPLACE_JEV_KEY?.trim() || undefined;
+const jevKey = values["no-tags"] ? undefined : process.env.PEARWRITE_JEV_KEY?.trim() || undefined;
 const tagger = jevKey ? jevTagger(jevKey) : undefined;
 const TAGS_NOTICE = "Comments are tagged by Jev (TypeSafe AI), which receives each comment and the text of the element it's on.";
 
 if (values["comment-only"] && values["view-only"]) {
-  console.error("inplace: use either --comment-only or --view-only, not both");
+  console.error("pearwrite: use either --comment-only or --view-only, not both");
   process.exit(2);
 }
 if (positionals[0] === "wait") {
@@ -151,22 +151,22 @@ if (positionals[0] === "wait") {
   try {
     process.stdout.write(agentGuide(positionals[1]));
   } catch (e) {
-    console.error(`inplace: ${(e as Error).message}`);
+    console.error(`pearwrite: ${(e as Error).message}`);
     process.exit(2);
   }
 } else if (positionals[0] === "mcp" && values.http) {
   // A tunnel makes this reachable from the internet, so stay local and require a token.
   const port = Number(values.port ?? "8766");
   const host = values.host ?? "127.0.0.1";
-  const token = values.token ?? process.env.INPLACE_TOKEN ?? newToken();
+  const token = values.token ?? process.env.PEARWRITE_TOKEN ?? newToken();
   runMcpHttpServer({ pauseSeconds, logPath, allowHosts, port, host, token, tagger }).then(
     (server) => {
       const actual = (server.address() as { port: number }).port;
-      console.log(`inplace MCP server: http://${host === "0.0.0.0" ? "localhost" : host}:${actual}/mcp/${token}`);
+      console.log(`pearwrite MCP server: http://${host === "0.0.0.0" ? "localhost" : host}:${actual}/mcp/${token}`);
       console.log("Point your tunnel at it and keep the URL secret: anyone with it can read and edit open documents.");
     },
     (e: NodeJS.ErrnoException) => {
-      console.error(e.code === "EADDRINUSE" ? `inplace: port ${port} is already in use; try --port` : e.message);
+      console.error(e.code === "EADDRINUSE" ? `pearwrite: port ${port} is already in use; try --port` : e.message);
       process.exit(1);
     },
   );
@@ -180,29 +180,29 @@ if (positionals[0] === "wait") {
 function serve(): void {
   const path = resolve(positionals[0]);
   if (!existsSync(path) || !statSync(path).isFile()) {
-    console.error(`inplace: no such file: ${path}`);
+    console.error(`pearwrite: no such file: ${path}`);
     process.exit(1);
   }
 
   const port = Number(values.port ?? "8765");
   const host = values.host ?? "127.0.0.1";
   if (values["on-pause"] && !pauseSeconds) {
-    console.error("inplace: --on-pause needs --pause to be more than 0");
+    console.error("pearwrite: --on-pause needs --pause to be more than 0");
     process.exit(2);
   }
 
   // Changes made on the page go to stdout (and the log file), so an agent running
-  // inplace in the background can read what the user did.
+  // Pearwrite in the background can read what the user did.
   const print = (line: string) => {
     console.log(line);
     if (logPath) appendFileSync(logPath, line + "\n");
   };
-  // stdout and the log file can be read without inplace knowing.
+  // stdout and the log file can be read without Pearwrite knowing.
   const agent = new AgentStatus({ unseenReaders: true });
   const onPause = values["on-pause"]
-    ? new PauseCommand(values["on-pause"], { INPLACE_FILE: path }, print, (running) => agent.commandRunning(running))
+    ? new PauseCommand(values["on-pause"], { PEARWRITE_FILE: path }, print, (running) => agent.commandRunning(running))
     : undefined;
-  // The same lines, numbered, for `inplace wait`.
+  // The same lines, numbered, for `pearwrite wait`.
   const feed = pauseSeconds ? new ChangeFeed() : undefined;
   const pauses = pauseSeconds
     ? new PauseWatcher(pauseSeconds * 1000, (summary, lines) => {
@@ -228,9 +228,9 @@ function serve(): void {
   const access = values["comment-only"] || values["view-only"]
     ? (req: IncomingMessage): Access => (req.headers.origin || req.headers["sec-fetch-site"] ? level : "comment")
     : undefined;
-  const server = createInplaceServer(doc, { feed, agent, allowHosts, access });
+  const server = createPearwriteServer(doc, { feed, agent, allowHosts, access });
   server.on("error", (e: NodeJS.ErrnoException) => {
-    console.error(e.code === "EADDRINUSE" ? `inplace: port ${port} is already in use; try --port` : e.message);
+    console.error(e.code === "EADDRINUSE" ? `pearwrite: port ${port} is already in use; try --port` : e.message);
     process.exit(1);
   });
   server.listen(port, host, () => {
@@ -238,7 +238,7 @@ function serve(): void {
     for (const url of serverUrls(port, host, allowHosts)) console.log(`  ${url}`);
     if (tagger) console.log(TAGS_NOTICE);
     // In the log file too, for an agent that only reads that.
-    const open = doc.comments.stillOpen(`\`inplace comments${port === 8765 ? "" : ` --port ${port}`}\``);
+    const open = doc.comments.stillOpen(`\`pearwrite comments${port === 8765 ? "" : ` --port ${port}`}\``);
     if (open) print(open);
     const hook = codexHookHint(port);
     if (hook) print(hook);
@@ -247,8 +247,8 @@ function serve(): void {
 }
 
 /**
- * `inplace wait`: ask the running server for the next pause and print it. A dropped
- * connection (say, inplace restarting) is retried a few times before giving up.
+ * `pearwrite wait`: ask the running server for the next pause and print it. A dropped
+ * connection (say, Pearwrite restarting) is retried a few times before giving up.
  */
 function waitForPause(): void {
   const port = Number(values.port ?? "8765");
@@ -256,7 +256,7 @@ function waitForPause(): void {
   const timeout = values.timeout === undefined ? undefined : Number(values.timeout);
   const after = values.after === undefined ? undefined : Number(values.after);
   if ((timeout !== undefined && !(timeout >= 0)) || (after !== undefined && !(Number.isInteger(after) && after >= 0))) {
-    console.error("inplace: --timeout takes a number of seconds and --after a whole number");
+    console.error("pearwrite: --timeout takes a number of seconds and --after a whole number");
     process.exit(2);
   }
   const deadline = timeout === undefined ? undefined : Date.now() + timeout * 1000;
@@ -270,7 +270,7 @@ function waitForPause(): void {
     const query = new URLSearchParams();
     if (after !== undefined) query.set("after", String(after));
     if (deadline !== undefined) query.set("timeout", String(Math.max(0, deadline - Date.now()) / 1000));
-    const req = get({ host, port, path: `/__inplace/wait?${query}`, headers: { host: `localhost:${port}` } }, (res) => {
+    const req = get({ host, port, path: `/__pearwrite/wait?${query}`, headers: { host: `localhost:${port}` } }, (res) => {
       connected = true;
       let body = "";
       res.setEncoding("utf8");
@@ -284,7 +284,7 @@ function waitForPause(): void {
           return retry(new Error("the connection closed before the answer was complete"));
         }
         if (res.statusCode !== 200) {
-          console.error(`inplace: ${reply.error ?? `the server answered ${res.statusCode}`}`);
+          console.error(`pearwrite: ${reply.error ?? `the server answered ${res.statusCode}`}`);
           process.exit(1);
         }
         finish(reply, reply.status === "timeout" ? 3 : 0);
@@ -301,7 +301,7 @@ function waitForPause(): void {
       return;
     }
     if (failures > 5 || late) {
-      console.error(`inplace: can't reach inplace on port ${port} (${e.message}). Is it running?`);
+      console.error(`pearwrite: can't reach Pearwrite on port ${port} (${e.message}). Is it running?`);
       process.exit(1);
     }
     setTimeout(attempt, 1000);
@@ -310,35 +310,35 @@ function waitForPause(): void {
   attempt();
 }
 
-/** `inplace setup codex`: add the hook that passes comments to Codex while it's busy. */
+/** `pearwrite setup codex`: add the hook that passes comments to Codex while it's busy. */
 function setup(): void {
   if (positionals[1] !== "codex") {
-    console.error("inplace: setup knows only codex: inplace setup codex [--port 8765]");
+    console.error("pearwrite: setup knows only codex: pearwrite setup codex [--port 8765]");
     process.exit(2);
   }
   const port = Number(values.port ?? "8765");
   if (!(Number.isInteger(port) && port > 0)) {
-    console.error("inplace: --port takes a port number");
+    console.error("pearwrite: --port takes a port number");
     process.exit(2);
   }
   const path = codexHooksPath();
   try {
-    const { result, backup } = addInplaceHook(path, port);
+    const { result, backup } = addPearwriteHook(path, port);
     console.log(result === "present"
-      ? `The inplace hook for port ${port} is already in ${path}.`
-      : `Added the inplace hook for port ${port} to ${path}${backup ? ` (the file as it was is in ${backup})` : ""}.\n` +
+      ? `The Pearwrite hook for port ${port} is already in ${path}.`
+      : `Added the Pearwrite hook for port ${port} to ${path}${backup ? ` (the file as it was is in ${backup})` : ""}.\n` +
         "Codex asks you to approve the new hook, and runs it only once you have.");
   } catch (e) {
-    console.error(`inplace: ${(e as Error).message}`);
+    console.error(`pearwrite: ${(e as Error).message}`);
     process.exit(1);
   }
 }
 
-/** `inplace pending`: what the user did since the agent last looked, without waiting for a pause. */
+/** `pearwrite pending`: what the user did since the agent last looked, without waiting for a pause. */
 function pending(): void {
   const port = Number(values.port ?? "8765");
   const host = values.host ?? "127.0.0.1";
-  const req = get({ host, port, path: "/__inplace/news", headers: { host: `localhost:${port}` } }, (res) => {
+  const req = get({ host, port, path: "/__pearwrite/news", headers: { host: `localhost:${port}` } }, (res) => {
     let body = "";
     res.setEncoding("utf8");
     res.on("data", (d: string) => (body += d));
@@ -350,26 +350,26 @@ function pending(): void {
         reply = {};
       }
       if (res.statusCode !== 200) {
-        console.error(`inplace: ${reply.error ?? `the server answered ${res.statusCode}`}`);
+        console.error(`pearwrite: ${reply.error ?? `the server answered ${res.statusCode}`}`);
         process.exit(1);
       }
       if (reply.note) process.stdout.write(reply.note + "\n", () => process.exit(0));
     });
   });
   req.on("error", (e) => {
-    console.error(`inplace: can't reach inplace on port ${port} (${e.message}). Is it running?`);
+    console.error(`pearwrite: can't reach Pearwrite on port ${port} (${e.message}). Is it running?`);
     process.exit(1);
   });
 }
 
-/** `inplace comments`, `inplace resolve` and `inplace comment`: one request to the running server. */
+/** `pearwrite comments`, `pearwrite resolve` and `pearwrite comment`: one request to the running server. */
 function comments(): void {
   const port = Number(values.port ?? "8765");
   const host = values.host ?? "127.0.0.1";
   const [command, ...rest] = positionals;
   const n = Number(rest[0]);
   if (command === "resolve" && !(Number.isInteger(n) && n > 0)) {
-    console.error("inplace: resolve takes the comment's number, e.g. inplace resolve 3");
+    console.error("pearwrite: resolve takes the comment's number, e.g. pearwrite resolve 3");
     process.exit(2);
   }
   const body = command === "resolve" ? JSON.stringify({ action: "resolve", n, ...(values.reply ? { reply: values.reply } : {}) })
@@ -378,7 +378,7 @@ function comments(): void {
     : undefined;
   const req = request({
     host, port, method: body ? "POST" : "GET",
-    path: body ? "/__inplace/comment" : `/__inplace/comments${values.all ? "" : "?open=1"}`,
+    path: body ? "/__pearwrite/comment" : `/__pearwrite/comments${values.all ? "" : "?open=1"}`,
     headers: { host: `localhost:${port}`, ...(body ? { "content-type": "application/json" } : {}) },
   }, (res) => {
     let text = "";
@@ -392,7 +392,7 @@ function comments(): void {
         reply = {};
       }
       if (res.statusCode !== 200) {
-        console.error(`inplace: ${reply.error ?? `the server answered ${res.statusCode}`}`);
+        console.error(`pearwrite: ${reply.error ?? `the server answered ${res.statusCode}`}`);
         process.exit(1);
       }
       const output = command === "resolve" ? `Marked comment #${n} as done.`
@@ -402,7 +402,7 @@ function comments(): void {
     });
   });
   req.on("error", (e) => {
-    console.error(`inplace: can't reach inplace on port ${port} (${e.message}). Is it running?`);
+    console.error(`pearwrite: can't reach Pearwrite on port ${port} (${e.message}). Is it running?`);
     process.exit(1);
   });
   req.end(body);

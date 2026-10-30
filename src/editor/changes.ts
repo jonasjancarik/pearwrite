@@ -20,9 +20,9 @@ function updateCorner() {
     corner.textContent = stashCount === 1 ? "1 edit set aside" : `${stashCount} edits set aside`;
     return;
   }
-  corner.setAttribute("aria-label", "inplace: changes and version");
+  corner.setAttribute("aria-label", "pearwrite: changes and version");
   corner.title = "Changes and version";
-  corner.innerHTML = LOGO + "<span>inplace</span>";
+  corner.innerHTML = LOGO + "<span>Pearwrite</span>";
   if (latestByAgent() > (seenChanges ?? 0)) corner.append(make("span", { className: "dot" }));
 }
 
@@ -31,7 +31,7 @@ async function loadHistory() {
     const data: {
       entries: HistoryEntry[]; undoable?: { kind: UndoKind; id: string }[]; authors?: Record<string, AuthorMark>; me?: string; pending?: ToReview[];
     } =
-      await (await fetch("/__inplace/history")).json();
+      await (await fetch("/__pearwrite/history")).json();
     historyEntries = data.entries;
     authorMarks = data.authors || {};
     meId = data.me;
@@ -141,7 +141,7 @@ async function uncover(el: HTMLElement) {
     while (hidden && !(hidden.hidden || getComputedStyle(hidden).display === "none")) hidden = hidden.parentElement;
     // The usual pattern for tabs and accordions: a button with aria-controls.
     const control = hidden?.id && [...document.querySelectorAll<HTMLElement>("[aria-controls]")]
-      .find((c) => c.getAttribute("aria-controls")!.split(/\s+/).includes(hidden!.id) && !c.closest("[data-inplace-ui]"));
+      .find((c) => c.getAttribute("aria-controls")!.split(/\s+/).includes(hidden!.id) && !c.closest("[data-pearwrite-ui]"));
     if (!control || clicked.has(control)) break;
     clicked.add(control);
     control.click();
@@ -209,13 +209,13 @@ function renderChanges() {
     list, versionLine());
 }
 
-/** Which inplace this is, so it's clear whether a restart is needed to get the latest. */
+/** Which Pearwrite this is, so it's clear whether a restart is needed to get the latest. */
 function versionLine() {
   let build: { version: string; branch?: string; commit?: string; dirty?: boolean } | null = null;
   try { build = JSON.parse(script.dataset.build || "null"); } catch {}
   if (!build) return make("footer");
   const where = build.commit ? ` \u00b7 ${build.branch ? build.branch + " @ " : ""}${build.commit}${build.dirty ? " (uncommitted changes)" : ""}` : "";
-  return make("footer", { textContent: `inplace ${build.version}${where}`, title: "The version of inplace serving this page" });
+  return make("footer", { textContent: `Pearwrite ${build.version}${where}`, title: "The version of Pearwrite serving this page" });
 }
 
 function openChanges() {

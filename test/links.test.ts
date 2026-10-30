@@ -31,7 +31,7 @@ test("a new unsafe link is refused, an existing one doesn't block other edits", 
 });
 
 test("saving or splitting a block with a new javascript: link is refused", () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-links-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-links-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Hello</p></body></html>');
   const doc = new Document(path, true, () => {}, dir);

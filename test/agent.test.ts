@@ -8,12 +8,12 @@ import { test } from "node:test";
 
 import { agentState, AgentStatus, FADING_MARK_MS, WORKING_MS, type AgentSignals } from "../src/agent.js";
 import { PauseWatcher } from "../src/idle.js";
-import { createInplaceServer, Document } from "../src/server.js";
+import { createPearwriteServer, Document } from "../src/server.js";
 import { ChangeFeed } from "../src/wait.js";
 
 const quiet: AgentSignals = { waits: 0, channel: false, commandRunning: false, unseenReaders: false };
 
-test("turns what inplace has seen into one state", () => {
+test("turns what Pearwrite has seen into one state", () => {
   const now = 10_000_000;
   assert.deepEqual(agentState(quiet, now), { state: "none" });
   // Only stdout or a log file: someone may be reading, so claim nothing.
@@ -61,7 +61,7 @@ test("--on-pause shows picked up while the command runs and done when it exits",
   assert.deepEqual(marks(status), [{ ids: ["p-1"], mark: "done" }, { ids: ["p-2"], mark: "done" }]);
 });
 
-test("a channel event or get_edits shows only that the pause was sent, and a reader inplace can't see shows nothing", () => {
+test("a channel event or get_edits shows only that the pause was sent, and a reader Pearwrite can't see shows nothing", () => {
   const channel = new AgentStatus({ channel: true });
   channel.edited(["p-1"]);
   channel.paused();
@@ -96,7 +96,7 @@ test("a block edited again loses its mark, and an eye runs out without turning i
 function agentEvents(port: number) {
   const seen: { state: string; ago?: number; seen?: { ids: string[]; mark: string }[] }[] = [];
   let res: IncomingMessage | undefined;
-  get({ host: "127.0.0.1", port, path: "/__inplace/events", headers: { host: `localhost:${port}` } }, (r) => {
+  get({ host: "127.0.0.1", port, path: "/__pearwrite/events", headers: { host: `localhost:${port}` } }, (r) => {
     res = r;
     let buffer = "";
     r.setEncoding("utf8");
@@ -124,7 +124,7 @@ function agentEvents(port: number) {
 }
 
 test("the page hears when a wait is open, when a pause is handed over, and when the agent writes", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-agent-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-agent-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p></body></html>');
   const feed = new ChangeFeed();
@@ -133,14 +133,14 @@ test("the page hears when a wait is open, when a pause is handed over, and when 
     feed.add(line);
     if (byUser) pauses.record(line);
   }, dir);
-  const server = createInplaceServer(doc, { feed, agent: new AgentStatus({ unseenReaders: true }) });
+  const server = createPearwriteServer(doc, { feed, agent: new AgentStatus({ unseenReaders: true }) });
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   const port = (server.address() as AddressInfo).port;
   const events = agentEvents(port);
   try {
     await events.until("unknown");
     const waiting = new Promise((ok) =>
-      get({ host: "127.0.0.1", port, path: "/__inplace/wait", headers: { host: `localhost:${port}` } }, (r) => r.resume().on("end", ok)));
+      get({ host: "127.0.0.1", port, path: "/__pearwrite/wait", headers: { host: `localhost:${port}` } }, (r) => r.resume().on("end", ok)));
     await events.until("waiting");
 
     doc.saveBlock("p-1", "Ten trees", "Twelve trees");
@@ -158,7 +158,7 @@ test("the page hears when a wait is open, when a pause is handed over, and when 
 });
 
 test("the page gets the edited blocks marked when a wait picks up the pause, and checked at the next wait", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-agent-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-agent-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p><p data-id="p-2">Two benches</p></body></html>');
   const feed = new ChangeFeed();
@@ -174,12 +174,12 @@ test("the page gets the edited blocks marked when a wait picks up the pause, and
       pauses.record(line);
     }
   }, dir);
-  const server = createInplaceServer(doc, { feed, agent });
+  const server = createPearwriteServer(doc, { feed, agent });
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   const port = (server.address() as AddressInfo).port;
   const events = agentEvents(port);
   const wait = () => new Promise((ok) =>
-    get({ host: "127.0.0.1", port, path: "/__inplace/wait", headers: { host: `localhost:${port}` } }, (r) => r.resume().on("end", ok)));
+    get({ host: "127.0.0.1", port, path: "/__pearwrite/wait", headers: { host: `localhost:${port}` } }, (r) => r.resume().on("end", ok)));
   try {
     await events.until("unknown");
     const first = wait();

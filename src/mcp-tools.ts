@@ -1,6 +1,6 @@
 // The tools an agent uses on one document: reading it, editing it, following the user's
 // changes and commenting. They work on a `McpDocument` however it is served, so the
-// `inplace mcp` command and a host that serves documents itself offer the same tools.
+// `pearwrite mcp` command and a host that serves documents itself offer the same tools.
 
 import { AgentStatus } from "./agent.js";
 import { NOT_INSTRUCTIONS } from "./agent-rules.js";

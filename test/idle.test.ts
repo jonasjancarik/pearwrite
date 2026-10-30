@@ -37,12 +37,12 @@ const waitFor = async (check: () => boolean) => {
 };
 
 test("runs the pause command with the changes on stdin, one run at a time", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-pause-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-pause-"));
   const out = join(dir, "runs.txt");
   const logged: string[] = [];
   // Each run appends its stdin and a separator, then waits a little so the next pause arrives mid-run.
-  const command = new PauseCommand(`cat >> "${out}"; echo --- >> "${out}"; echo "file: $INPLACE_FILE"; sleep 0.2`,
-    { INPLACE_FILE: "/docs/report.html" }, (line) => logged.push(line));
+  const command = new PauseCommand(`cat >> "${out}"; echo --- >> "${out}"; echo "file: $PEARWRITE_FILE"; sleep 0.2`,
+    { PEARWRITE_FILE: "/docs/report.html" }, (line) => logged.push(line));
   command.run(["edited p-1"]);
   command.run(["edited p-2"]);
   command.run(["added tr-3"]);

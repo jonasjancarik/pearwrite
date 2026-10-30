@@ -11,7 +11,7 @@ import { ChangeFeed, newsNote } from "../src/wait.js";
 
 const CLI = resolve(import.meta.dirname, "..", "src", "cli.js");
 
-// Numbered from 0 here; inplace numbers them from the time it started.
+// Numbered from 0 here; Pearwrite numbers them from the time it started.
 test("numbers the lines and answers straight away when a pause is already there", async () => {
   const feed = new ChangeFeed(500, 0);
   feed.add("16:34:18 edited p-1");
@@ -39,8 +39,8 @@ test("news gives the user's comments and pauses once, and leaves the next wait i
   await feed.wait(feed.delivered);
   assert.deepEqual(feed.news(isCommentLine), [], "nor what a wait already gave the agent");
   assert.equal(newsNote([]), undefined);
-  assert.match(newsNote(["a line"])!, /^inplace: .*\n  a line\n/);
-  assert.match(newsNote(["a line"], 8765)!, /^inplace: /, "the default port goes unsaid");
+  assert.match(newsNote(["a line"])!, /^pearwrite: .*\n  a line\n/);
+  assert.match(newsNote(["a line"], 8765)!, /^pearwrite: /, "the default port goes unsaid");
 });
 
 test("a wait resolves at the next pause, and with null after its timeout", async () => {
@@ -64,8 +64,8 @@ test("says so when older lines were dropped", () => {
   assert.deepEqual(feed.take(2)!.lines, ["c", "paused"]);
 });
 
-test("a number from before inplace restarted gets everything since the restart, and says so", () => {
-  const RESTARTED = "(inplace restarted since your last wait, so changes from before the restart may be missing; read the document to catch up)";
+test("a number from before Pearwrite restarted gets everything since the restart, and says so", () => {
+  const RESTARTED = "(Pearwrite restarted since your last wait, so changes from before the restart may be missing; read the document to catch up)";
   const old = new ChangeFeed(500, 1000);
   old.add("edited p-1");
   old.add("paused after 1 change", true);
@@ -104,15 +104,15 @@ function run(args: string[]): Promise<{ code: number; out: string }> {
   });
 }
 
-test("inplace wait returns each pause's lines once, and times out when nothing happens", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-wait-"));
+test("pearwrite wait returns each pause's lines once, and times out when nothing happens", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-wait-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p></body></html>');
   const port = await freePort();
   const server = spawn(process.execPath, [CLI, path, "--port", String(port), "--pause", "0.3"], { stdio: ["ignore", "pipe", "inherit"] });
   try {
     await new Promise<void>((ok) => server.stdout.on("data", (d) => String(d).includes("localhost") && ok()));
-    const save = (old: string, next: string) => fetch(`http://localhost:${port}/__inplace/save`, {
+    const save = (old: string, next: string) => fetch(`http://localhost:${port}/__pearwrite/save`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "p-1", old, new: next }),
     });
 
@@ -141,15 +141,15 @@ test("inplace wait returns each pause's lines once, and times out when nothing h
     assert.equal(second.next, reply.next + 2);
 
     // Browsers can't hold waits open.
-    const res = await fetch(`http://localhost:${port}/__inplace/wait?timeout=0`, { headers: { origin: "https://evil.example" } });
+    const res = await fetch(`http://localhost:${port}/__pearwrite/wait?timeout=0`, { headers: { origin: "https://evil.example" } });
     assert.equal(res.status, 403);
   } finally {
     server.kill();
   }
 });
 
-test("inplace wait --after carries on after inplace restarts, from the restart", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-restart-"));
+test("pearwrite wait --after carries on after Pearwrite restarts, from the restart", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-restart-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p></body></html>');
   const port = await freePort();
@@ -158,7 +158,7 @@ test("inplace wait --after carries on after inplace restarts, from the restart",
     await new Promise<void>((ok) => proc.stdout.on("data", (d) => String(d).includes("localhost") && ok()));
     return proc;
   };
-  const save = (old: string, next: string) => fetch(`http://localhost:${port}/__inplace/save`, {
+  const save = (old: string, next: string) => fetch(`http://localhost:${port}/__pearwrite/save`, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "p-1", old, new: next }),
   });
   let server = await start();
@@ -170,13 +170,13 @@ test("inplace wait --after carries on after inplace restarts, from the restart",
     server.kill();
     await new Promise((r) => server.on("close", r));
     server = await start();
-    // The new inplace has as many lines as the old one had when the agent last waited.
+    // The new Pearwrite has as many lines as the old one had when the agent last waited.
     await save("Twelve trees", "Twelve oaks");
     await new Promise((r) => setTimeout(r, 700));
     const after = await run(["wait", "--port", String(port), "--timeout", "2", "--after", String(before.next)]);
-    assert.equal(after.code, 0, "returns the pause instead of waiting for more lines than the old inplace had");
+    assert.equal(after.code, 0, "returns the pause instead of waiting for more lines than the old Pearwrite had");
     const reply = JSON.parse(after.out);
-    assert.match(reply.lines[0], /^\(inplace restarted since your last wait/);
+    assert.match(reply.lines[0], /^\(Pearwrite restarted since your last wait/);
     assert.deepEqual(reply.lines.slice(1).map((l: string) => l.replace(/^\S+ /, "")),
       ['edited p-1: "Twelve trees" → "Twelve oaks"', "paused after 1 change: edited p-1"]);
 
@@ -190,26 +190,26 @@ test("inplace wait --after carries on after inplace restarts, from the restart",
   }
 });
 
-test("inplace wait gives up when no server is running", async () => {
+test("pearwrite wait gives up when no server is running", async () => {
   const { code } = await run(["wait", "--port", String(await freePort()), "--timeout", "0.5"]);
   assert.equal(code, 1);
 });
 
-test("inplace pending and the Codex hook answer report a new comment once, without waiting", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-pending-"));
+test("pearwrite pending and the Codex hook answer report a new comment once, without waiting", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-pending-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p></body></html>');
   const port = await freePort();
   const server = spawn(process.execPath, [CLI, path, "--port", String(port), "--pause", "0.3"], { stdio: ["ignore", "pipe", "inherit"] });
   try {
     await new Promise<void>((ok) => server.stdout.on("data", (d) => String(d).includes("localhost") && ok()));
-    const hook = () => fetch(`http://localhost:${port}/__inplace/news?for=codex-hook`);
+    const hook = () => fetch(`http://localhost:${port}/__pearwrite/news?for=codex-hook`);
     assert.deepEqual(await run(["pending", "--port", String(port)]), { code: 0, out: "" });
     const quiet = await hook();
     assert.equal(quiet.status, 204);
     assert.equal(await quiet.text(), "");
 
-    await fetch(`http://localhost:${port}/__inplace/comment`, {
+    await fetch(`http://localhost:${port}/__pearwrite/comment`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "add", id: "p-1", text: "Name the trees." }),
     });
@@ -218,7 +218,7 @@ test("inplace pending and the Codex hook answer report a new comment once, witho
     const output = await told.json();
     assert.equal(output.hookSpecificOutput.hookEventName, "PostToolUse");
     assert.match(output.hookSpecificOutput.additionalContext, /comment #1 on p-1: "Name the trees\."/);
-    assert.match(output.hookSpecificOutput.additionalContext, new RegExp(`^inplace \\(on --port ${port}\\)`));
+    assert.match(output.hookSpecificOutput.additionalContext, new RegExp(`^pearwrite \\(on --port ${port}\\)`));
     assert.equal((await run(["pending", "--port", String(port)])).out, "", "not twice");
 
     // The pause after it comes once more, and a wait still returns all of it.
@@ -228,22 +228,22 @@ test("inplace pending and the Codex hook answer report a new comment once, witho
     assert.equal(waited.status, "pause");
     assert.match(waited.lines[0], /comment #1 on p-1/);
 
-    const res = await fetch(`http://localhost:${port}/__inplace/news`, { headers: { origin: "https://evil.example" } });
+    const res = await fetch(`http://localhost:${port}/__pearwrite/news`, { headers: { origin: "https://evil.example" } });
     assert.equal(res.status, 403);
   } finally {
     server.kill();
   }
 });
 
-test("inplace comments lists the open comments and inplace resolve marks one done", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-resolve-"));
+test("pearwrite comments lists the open comments and pearwrite resolve marks one done", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-resolve-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Ten trees</p></body></html>');
   const port = await freePort();
   const server = spawn(process.execPath, [CLI, path, "--port", String(port)], { stdio: ["ignore", "pipe", "inherit"] });
   try {
     await new Promise<void>((ok) => server.stdout.on("data", (d) => String(d).includes("localhost") && ok()));
-    await fetch(`http://localhost:${port}/__inplace/comment`, {
+    await fetch(`http://localhost:${port}/__pearwrite/comment`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "add", id: "p-1", text: "Name the trees." }),
     });

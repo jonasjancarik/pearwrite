@@ -10,8 +10,8 @@ const NAMES: Record<string, string | undefined> = {
 const nameOf = (el: Element) => NAMES[el.tagName] || (/^H\d$/.test(el.tagName) ? "heading" : "block");
 
 const ui = document.createElement("div");
-ui.id = "inplace-ui";
-ui.dataset.inplaceUi = "";
+ui.id = "pearwrite-ui";
+ui.dataset.pearwriteUi = "";
 document.body.append(ui);
 let grips: HTMLElement[] = []; // elements showing a grip, innermost first
 let hoverTimer: number | null = null;
@@ -38,11 +38,11 @@ const canAdd = (el: HTMLElement) => canEdit && !!el.dataset?.id && INSERTABLE.ha
 const ADD_LABELS: Record<string, string | undefined> = { LI: "Add an item below", TR: "Add a row below", DT: "Add a term below", DD: "Add a description below" };
 
 function outline(el: Element | null) {
-  let box = document.getElementById("inplace-outline");
+  let box = document.getElementById("pearwrite-outline");
   if (!el) return box?.remove();
   if (!box) {
     box = document.createElement("div");
-    box.id = "inplace-outline";
+    box.id = "pearwrite-outline";
     ui.append(box);
   }
   const r = el.getBoundingClientRect();
@@ -64,7 +64,7 @@ function showGrips(chain: HTMLElement[]) {
       plusShown = true; // only for the innermost element, to keep the margin readable
       const plus = document.createElement("button");
       plus.type = "button";
-      plus.className = "inplace-grip inplace-add";
+      plus.className = "pearwrite-grip pearwrite-add";
       plus.title = ADD_LABELS[el.tagName] || "Add a paragraph below";
       plus.setAttribute("aria-label", plus.title);
       plus.textContent = "+";
@@ -83,7 +83,7 @@ function showGrips(chain: HTMLElement[]) {
     if (!(isMovable(el) && siblingsOf(el).length)) return;
     const grip = document.createElement("button");
     grip.type = "button";
-    grip.className = "inplace-grip";
+    grip.className = "pearwrite-grip";
     grip.dataset.index = String(depth);
     grip.title = `Drag to move this ${nameOf(el)}`;
     grip.setAttribute("aria-label", grip.title);
@@ -100,7 +100,7 @@ const sameChain = (a: Element[], b: Element[]) => a.length === b.length && a.eve
 
 document.addEventListener("mousemove", (e) => {
   if (drag || reviewing) return;
-  if ((e.target as Element).closest?.(".inplace-grip")) {
+  if ((e.target as Element).closest?.(".pearwrite-grip")) {
     clearTimeout(hoverTimer!);
     hoverTimer = null;
     return;
@@ -140,10 +140,10 @@ function dropAt(x: number, y: number): Drop {
 }
 
 function showMarker(drop: Drop) {
-  let marker = document.getElementById("inplace-marker");
+  let marker = document.getElementById("pearwrite-marker");
   if (!marker) {
     marker = document.createElement("div");
-    marker.id = "inplace-marker";
+    marker.id = "pearwrite-marker";
     ui.append(marker);
   }
   marker.style.display = drop.unchanged ? "none" : "";
@@ -155,7 +155,7 @@ function showMarker(drop: Drop) {
 }
 
 ui.addEventListener("pointerdown", (e) => {
-  const grip = (e.target as Element).closest<HTMLElement>(".inplace-grip:not(.inplace-add)");
+  const grip = (e.target as Element).closest<HTMLElement>(".pearwrite-grip:not(.pearwrite-add)");
   if (!grip || e.button !== 0) return;
   e.preventDefault();
   const el = grips[Number(grip.dataset.index)];
@@ -166,9 +166,9 @@ ui.addEventListener("pointerdown", (e) => {
   const [ra, rb] = items.slice(0, 2).map((n) => n.getBoundingClientRect());
   drag = { el, siblings, drop: null, vertical: rb.top >= ra.bottom - 2 || rb.bottom <= ra.top + 2 };
   formatToolbar.style.display = "none";
-  for (const g of ui.querySelectorAll<HTMLElement>(".inplace-grip")) g.style.visibility = g === grip ? "" : "hidden";
-  el.classList.add("inplace-dragging");
-  document.documentElement.classList.add("inplace-is-dragging");
+  for (const g of ui.querySelectorAll<HTMLElement>(".pearwrite-grip")) g.style.visibility = g === grip ? "" : "hidden";
+  el.classList.add("pearwrite-dragging");
+  document.documentElement.classList.add("pearwrite-is-dragging");
   outline(el);
 });
 
@@ -184,8 +184,8 @@ document.addEventListener("pointermove", (e) => {
 function endDrag() {
   const state = drag!;
   drag = null;
-  state.el.classList.remove("inplace-dragging");
-  document.documentElement.classList.remove("inplace-is-dragging");
+  state.el.classList.remove("pearwrite-dragging");
+  document.documentElement.classList.remove("pearwrite-is-dragging");
   showGrips([]);
   return state;
 }

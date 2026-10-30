@@ -38,7 +38,7 @@ async function undoChange(kind: UndoKind, id: string) {
 
 document.addEventListener("keydown", (e) => {
   if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey || e.key.toLowerCase() !== "z" || composing(e)) return;
-  if ((e.target as Element).closest?.("input, textarea, [data-inplace-ui]")) return;
+  if ((e.target as Element).closest?.("input, textarea, [data-pearwrite-ui]")) return;
   const step = undoSteps.at(-1);
   if (!step || lastInputAt > step.at || reviewing) return;
   e.preventDefault();

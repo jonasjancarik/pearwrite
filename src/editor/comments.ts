@@ -13,16 +13,16 @@ interface CommentPlace {
 let commentPlaces = new Map<number, CommentPlace>(); // by comment number
 let anchoring: Anchoring | null = null;
 // A URL, not a file TypeScript can follow, so the module is typed here.
-const anchoringReady = import("/__inplace/anchor.js" as string).then((m: Anchoring) => (anchoring = m), () => null);
+const anchoringReady = import("/__pearwrite/anchor.js" as string).then((m: Anchoring) => (anchoring = m), () => null);
 
-const commentLayer = make("div", { id: "inplace-comment-layer" });
-commentLayer.dataset.inplaceUi = "";
-const commentBox = make("div", { id: "inplace-comment-box" });
-commentBox.dataset.inplaceUi = "";
+const commentLayer = make("div", { id: "pearwrite-comment-layer" });
+commentLayer.dataset.pearwriteUi = "";
+const commentBox = make("div", { id: "pearwrite-comment-box" });
+commentBox.dataset.pearwriteUi = "";
 commentBox.setAttribute("role", "dialog");
 commentBox.setAttribute("aria-label", "Comment");
-const elementCommentButton = make("button", { type: "button", id: "inplace-comment-here", textContent: "Comment" });
-elementCommentButton.dataset.inplaceUi = "";
+const elementCommentButton = make("button", { type: "button", id: "pearwrite-comment-here", textContent: "Comment" });
+elementCommentButton.dataset.pearwriteUi = "";
 document.body.append(commentLayer, commentBox, elementCommentButton);
 
 // The selection toolbar gets a Comment button after the formatting buttons.
@@ -37,7 +37,7 @@ const commentNoun = (el: Element) => (el.tagName.toLowerCase() === "svg" ? "char
 // Character offsets in an element's text, and back.
 // Text as the file has it: words crossed out by "Show what changed" and
 // other page-only marks don't count, but the words it marks as new do.
-const NOT_IN_FILE = "[data-inplace-ui]:not(ins)";
+const NOT_IN_FILE = "[data-pearwrite-ui]:not(ins)";
 function fileText(root: Node): string {
   const copy = root.cloneNode(true) as Element | DocumentFragment;
   for (const ui of copy.querySelectorAll(NOT_IN_FILE)) ui.remove();
@@ -67,7 +67,7 @@ function rangeIn(el: Node, start: number, end: number) {
 let seenComments: Set<number> | null = null; // numbers of the comments loaded so far, to notice new ones from the agent
 async function loadComments() {
   try {
-    comments = (await (await fetch("/__inplace/comments")).json()).comments;
+    comments = (await (await fetch("/__pearwrite/comments")).json()).comments;
   } catch {
     return;
   }
@@ -100,7 +100,7 @@ function placeComments() {
 function paintComments() {
   const open = comments.filter((c) => c.status === "open");
   if (canHighlight) {
-    for (const [name, list] of [["inplace-comment", open.filter((c) => !c.by)], ["inplace-agent-comment", open.filter((c) => c.by)]] as [string, PageComment[]][]) {
+    for (const [name, list] of [["pearwrite-comment", open.filter((c) => !c.by)], ["pearwrite-agent-comment", open.filter((c) => c.by)]] as [string, PageComment[]][]) {
       const ranges = list.map((c) => commentPlaces.get(c.n)?.range).filter(Boolean) as Range[];
       if (ranges.length) CSS.highlights.set(name, new Highlight(...ranges));
       else CSS.highlights.delete(name);
@@ -116,7 +116,7 @@ function paintComments() {
     const marker = make("button", { type: "button", className: list.every((c) => c.by) ? "marker agent" : "marker", textContent: String(list.length),
       title: list.length === 1 ? "1 comment" : `${list.length} comments` });
     marker.setAttribute("aria-label", marker.title);
-    (marker as Marker).inplaceTarget = el;
+    (marker as Marker).pearwriteTarget = el;
     marker.addEventListener("click", () => showComments(list, marker.getBoundingClientRect()));
     return marker;
   }));
@@ -124,11 +124,11 @@ function paintComments() {
 }
 
 /** A comment marker, with the element it sits on. */
-type Marker = HTMLButtonElement & { inplaceTarget: Element };
+type Marker = HTMLButtonElement & { pearwriteTarget: Element };
 
 function positionMarkers() {
   for (const marker of commentLayer.children as HTMLCollectionOf<Marker>) {
-    const r = marker.inplaceTarget.getBoundingClientRect();
+    const r = marker.pearwriteTarget.getBoundingClientRect();
     const hidden = r.bottom < 0 || r.top > innerHeight || (!r.width && !r.height);
     marker.style.display = hidden ? "none" : "";
     marker.style.left = `${Math.min(innerWidth - 26, r.right + 4)}px`;
@@ -162,7 +162,7 @@ function openBox(rect: DOMRect, ...children: (Node | string)[]) {
 function closeBox() {
   commentBox.classList.remove("open");
   draft = null;
-  if (canHighlight) CSS.highlights.delete("inplace-comment-draft");
+  if (canHighlight) CSS.highlights.delete("pearwrite-comment-draft");
 }
 
 // A text field where Enter submits, Shift+Enter adds a line and Escape cancels.
@@ -208,7 +208,7 @@ function startComment(el: HTMLElement | null | undefined = null) {
       return showStatus("Crossed-out text is no longer in the document, so it can't be commented on.", "info", 4000);
     const node = range.commonAncestorContainer;
     el = (node.nodeType === 1 ? node as Element : node.parentElement)?.closest<HTMLElement>("[data-id]");
-    if (!el || el.closest("[data-inplace-ui]")) return;
+    if (!el || el.closest("[data-pearwrite-ui]")) return;
   }
   let ctx: QuoteContext = { quote: "", prefix: "", suffix: "" };
   if (range && !range.collapsed && anchoring) {
@@ -226,7 +226,7 @@ function startComment(el: HTMLElement | null | undefined = null) {
 // The box for a new comment on an element, or on the quoted words in it when they were found.
 function openDraft(el: HTMLElement, ctx: QuoteContext, quoteRange: Range | null, text = "", caret?: [number, number]) {
   draft = { id: el.dataset.id!, ...ctx };
-  if (canHighlight && quoteRange) CSS.highlights.set("inplace-comment-draft", new Highlight(quoteRange));
+  if (canHighlight && quoteRange) CSS.highlights.set("pearwrite-comment-draft", new Highlight(quoteRange));
   const field = commentField(text, () => addComment(field.value));
   const heading = ctx.quote
     ? make("p", { className: "quote", textContent: clipText(ctx.quote, 120) })
@@ -244,7 +244,7 @@ async function addComment(text: string) {
   if (!draft || !text.trim()) return;
   const res = await post("comment", { action: "add", ...draft, text });
   if (!res.ok) return showStatus(res.status === 404 ? "Couldn't add the comment: this part of the page has changed. Reload and try again."
-    : "Couldn't add the comment. Is inplace still running?", "error", 5000);
+    : "Couldn't add the comment. Is Pearwrite still running?", "error", 5000);
   closeBox();
   getSelection()!.removeAllRanges();
   showStatus("Comment added");
@@ -253,7 +253,7 @@ async function addComment(text: string) {
 
 async function changeComment(payload: object, done?: string) {
   const res = await post("comment", payload);
-  if (!res.ok) return showStatus("Couldn't change the comment. Is inplace still running?", "error", 5000);
+  if (!res.ok) return showStatus("Couldn't change the comment. Is Pearwrite still running?", "error", 5000);
   if (done) showStatus(done);
   loadComments();
 }
@@ -408,7 +408,7 @@ function commentsGroup() {
 
 // Clicking highlighted text shows its comment; the caret still goes where the user clicked.
 document.addEventListener("click", (e) => {
-  if (!canHighlight || (e.target as Element).closest?.("[data-inplace-ui]") || !getSelection()!.isCollapsed) return;
+  if (!canHighlight || (e.target as Element).closest?.("[data-pearwrite-ui]") || !getSelection()!.isCollapsed) return;
   const at = document.caretPositionFromPoint?.(e.clientX, e.clientY);
   const point = at ? { node: at.offsetNode, offset: at.offset } : (() => {
     const r = document.caretRangeFromPoint?.(e.clientX, e.clientY);
@@ -434,7 +434,7 @@ function wholeTarget(node: EventTarget | null) {
 }
 document.addEventListener("mousemove", (e) => {
   if (!canComment || e.target === elementCommentButton || drag) return;
-  const el = (e.target as Element).closest?.("[data-inplace-ui]") ? null : wholeTarget(e.target);
+  const el = (e.target as Element).closest?.("[data-pearwrite-ui]") ? null : wholeTarget(e.target);
   if (el === hovered) return;
   hovered = el;
   if (!el) return (elementCommentButton.style.display = "none");

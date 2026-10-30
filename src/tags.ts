@@ -39,7 +39,7 @@ export function jevTagger(key: string, options: JevOptions = {}): CommentTagger 
   } = options;
   let warned = false;
   const fail = (why: string) => {
-    if (!warned) warn(`inplace: couldn't tag a comment with Jev (${why}); comments carry on without tags.`);
+    if (!warned) warn(`pearwrite: couldn't tag a comment with Jev (${why}); comments carry on without tags.`);
     warned = true;
     return undefined;
   };
@@ -71,7 +71,7 @@ export function jevTagger(key: string, options: JevOptions = {}): CommentTagger 
     } catch (e) {
       return fail((e as Error).name === "TimeoutError" ? `no answer within ${timeoutMs} ms` : (e as Error).message);
     }
-    if (!res.ok) return fail(`HTTP ${res.status}${res.status === 401 ? ", check INPLACE_JEV_KEY" : ""}`);
+    if (!res.ok) return fail(`HTTP ${res.status}${res.status === 401 ? ", check PEARWRITE_JEV_KEY" : ""}`);
     try {
       const answer = (await res.json())?.answers?.kind;
       const picked = CRITERIA[answer?.choice];

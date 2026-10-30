@@ -52,7 +52,7 @@ test("serves a document's tools without opening or closing, and the guide once o
 
     const info = await agent.tool("document_info");
     assert.match(info.text, /Document: report\.html\nOpen it at: https:\/\/docs\.example\.com\/d\/1/);
-    assert.match(info.text, /# Working on a document with inplace/, "the first call carries the agent guide");
+    assert.match(info.text, /# Working on a document with Pearwrite/, "the first call carries the agent guide");
     const read = await agent.tool("read_document", { id: "p-1" });
     assert.equal(read.text, '<p data-id="p-1">Ten trees</p>', "and only the first");
     assert.match((await agent.tool("guide", { topic: "Editing rules" })).text, /^## Editing rules\n/, "a part of the guide on request");

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Browser tests for the editing script (src/editor/). Each test starts its
-// own inplace server on a temporary copy of a document; see e2e/fixtures.ts.
+// own Pearwrite server on a temporary copy of a document; see e2e/fixtures.ts.
 export default defineConfig({
   testDir: "e2e",
   timeout: 20_000,

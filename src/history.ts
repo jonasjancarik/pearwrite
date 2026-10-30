@@ -1,4 +1,4 @@
-// A short history of what changed in the document while inplace runs, for the
+// A short history of what changed in the document while Pearwrite runs, for the
 // page's change list. Changes are worked out per block by comparing the file
 // before and after each write, so every way of changing it is covered the same
 // way: typing on the page, an agent editing the file, or the MCP tools.
@@ -162,7 +162,7 @@ function readBlocks(source: string): Blocks {
   return { blocks, order };
 }
 
-/** A short fingerprint of each block's own content, to tell later whether it was changed outside inplace. */
+/** A short fingerprint of each block's own content, to tell later whether it was changed outside Pearwrite. */
 export function fingerprints(source: string): Map<string, string> {
   const found = new Map<string, string>();
   for (const [id, b] of blocksOf(source).blocks) found.set(id, createHash("sha1").update(`${b.tag}\0${b.own}`).digest("hex").slice(0, 10));

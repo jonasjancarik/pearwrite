@@ -1,6 +1,6 @@
 // Finding the text a comment was about again after the document changed. Pure string
-// work, so it runs in Node for the tests and, served as /__inplace/anchor.js, in the
-// page. inplace searches inside one element's text (found by its data-id), not the
+// work, so it runs in Node for the tests and, served as /__pearwrite/anchor.js, in the
+// page. Pearwrite searches inside one element's text (found by its data-id), not the
 // whole page, so repeats are rare and the search is cheap.
 //
 // buildContext and findQuote are adapted from human-review's src/anchor-text.js

@@ -1,11 +1,11 @@
-// What inplace can tell about the agent picking up the user's edits, for one line on
-// the page. Agents read inplace's output in several ways, and some of them (stdout,
+// What Pearwrite can tell about the agent picking up the user's edits, for one line on
+// the page. Agents read Pearwrite's output in several ways, and some of them (stdout,
 // a --log file) can't be seen at all, so this only ever states what was observed.
 
 export type AgentState = "waiting" | "working" | "checked" | "unknown" | "none";
 
 export interface AgentSignals {
-  /** `inplace wait` or `wait_for_edits` calls open right now. */
+  /** `pearwrite wait` or `wait_for_edits` calls open right now. */
   waits: number;
   /** An MCP client that declared the Claude Code channel capability is attached. */
   channel: boolean;
@@ -17,7 +17,7 @@ export interface AgentSignals {
   lastDelivery?: number;
   /** When the agent last changed the file, or last started a wait. */
   lastAgentAction?: number;
-  /** stdout, a --log file or channel messages may be read by an agent inplace can't see. */
+  /** stdout, a --log file or channel messages may be read by an agent Pearwrite can't see. */
   unseenReaders: boolean;
 }
 
@@ -26,7 +26,7 @@ export const WORKING_MS = 5 * 60_000;
 
 /**
  * The mark beside the blocks of one pause: "picked" (an eye) when the agent took the pause in a
- * way that also shows when it's done, "sent" (an eye that fades) when inplace can't tell when
+ * way that also shows when it's done, "sent" (an eye that fades) when Pearwrite can't tell when
  * it's done, "done" (a check that fades) once the agent has moved on.
  */
 export type SeenMark = "picked" | "sent" | "done";

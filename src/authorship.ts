@@ -1,6 +1,6 @@
 // Who wrote each block last, kept beside the document rather than in it. One record per block id:
 // the last author, when, who added the block, and a fingerprint of its content. The fingerprint
-// is how a change made while inplace wasn't running is noticed at the next start: such a block
+// is how a change made while Pearwrite wasn't running is noticed at the next start: such a block
 // has no author we can name, so it goes back to unknown.
 
 import { type Author, type BlockChange, fingerprints, readAuthor } from "./history.js";
@@ -8,7 +8,7 @@ import { type Author, type BlockChange, fingerprints, readAuthor } from "./histo
 export interface Mark {
   by: Author;
   at: string; // ISO time of the last change
-  addedBy?: Author; // set when inplace saw the block being added
+  addedBy?: Author; // set when Pearwrite saw the block being added
   fp: string;
 }
 
@@ -49,7 +49,7 @@ export class Authorship {
     return touched;
   }
 
-  /** After a write that isn't anyone's (inplace adding ids), keep the fingerprints matching the file. */
+  /** After a write that isn't anyone's (Pearwrite adding ids), keep the fingerprints matching the file. */
   refit(source: string): boolean {
     const now = fingerprints(source);
     let touched = false;

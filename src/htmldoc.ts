@@ -694,8 +694,8 @@ export function replaceElement(
   return source.slice(0, from) + html + source.slice(to);
 }
 
-/** The `<meta>` that names a document, so what inplace keeps beside it follows it when it's moved. */
-export const DOCUMENT_ID_META = "inplace-id";
+/** The `<meta>` that names a document, so what Pearwrite keeps beside it follows it when it's moved. */
+export const DOCUMENT_ID_META = "pearwrite-id";
 
 function documentIdNode(source: string): Node | null {
   for (const node of walk(parse(source))) {
@@ -704,13 +704,13 @@ function documentIdNode(source: string): Node | null {
   return null;
 }
 
-/** The id in the document's `<meta name="inplace-id">`, if it has one. */
+/** The id in the document's `<meta name="pearwrite-id">`, if it has one. */
 export function documentIdOf(source: string): string | undefined {
   return documentIdNode(source)?.attrs.get("content") || undefined;
 }
 
 /**
- * The document with its `<meta name="inplace-id">` set to `id`: at the start of the head, or
+ * The document with its `<meta name="pearwrite-id">` set to `id`: at the start of the head, or
  * where the parser starts one when the file doesn't write it out.
  */
 export function withDocumentId(source: string, id: string): string {

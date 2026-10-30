@@ -7,7 +7,7 @@ import { test } from "node:test";
 import { CantUndo } from "../src/pending.js";
 import { Document } from "../src/server.js";
 
-const DOC = `<!doctype html><html><head><meta name="inplace-id" content="0a1b2c3d4e5f"></head><body>
+const DOC = `<!doctype html><html><head><meta name="pearwrite-id" content="0a1b2c3d4e5f"></head><body>
 <h1 data-id="h1-1">Plan</h1>
 <p data-id="p-1">The roof garden opens in May.</p>
 <p data-id="p-2">Two beds stay open for anyone.</p>
@@ -21,14 +21,14 @@ const DOC = `<!doctype html><html><head><meta name="inplace-id" content="0a1b2c3
 `;
 
 function open(html = DOC) {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-pending-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-pending-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, html);
   const lines: string[] = [];
   const make = () => new Document(path, true, (line) => lines.push(line), dir);
   const doc = make();
   const read = () => readFileSync(path, "utf8");
-  // An agent's edit: a write inplace didn't make, picked up the next time inplace looks.
+  // An agent's edit: a write Pearwrite didn't make, picked up the next time Pearwrite looks.
   const agent = (from: string | RegExp, to: string) => {
     const text = read();
     const next = text.replace(from, to);
@@ -165,7 +165,7 @@ test("pending changes survive a restart, and changes to blocks removed meanwhile
   const { agent, make, path } = open();
   agent("opens in May", "opens in June");
   agent("Two beds", "Three beds");
-  // While inplace isn't running, someone removes p-2.
+  // While Pearwrite isn't running, someone removes p-2.
   writeFileSync(path, readFileSync(path, "utf8").replace(/<p data-id="p-2">[^<]*<\/p>\n/, ""));
   const again = make();
   assert.deepEqual(pending(again), ["changed p-1"]);
@@ -176,7 +176,7 @@ test("pending changes survive a restart, and changes to blocks removed meanwhile
 test("an undo right after an agent write it hasn't seen yet keeps that write", () => {
   const { doc, agent, path } = open();
   agent("opens in May", "opens in June");
-  // The agent writes again, to this block and another, and inplace hasn't polled yet.
+  // The agent writes again, to this block and another, and Pearwrite hasn't polled yet.
   writeFileSync(path, readFileSync(path, "utf8").replace("The roof garden", "The roof terrace garden").replace("Two beds", "Three beds"));
   doc.undoAgentChange("p-1");
   const text = doc.source();

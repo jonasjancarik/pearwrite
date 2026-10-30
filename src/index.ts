@@ -1,7 +1,7 @@
-// inplace as a library, for hosts that serve documents themselves: keep each document in a
-// DocumentStore of their own, route its requests to createInplaceHandler, and act on the
+// Pearwrite as a library, for hosts that serve documents themselves: keep each document in a
+// DocumentStore of their own, route its requests to createPearwriteHandler, and act on the
 // change lines and pauses the way the CLI hands them to an agent. A host that knows who is
-// using the page can pass `author` to createInplaceHandler, and name its own agent through the
+// using the page can pass `author` to createPearwriteHandler, and name its own agent through the
 // `by` argument of the Document methods an agent uses, for the marks that show who wrote what.
 
 export { AgentStatus } from "./agent.js";
@@ -17,7 +17,7 @@ export { pauseEvent } from "./mcp.js";
 export { createMcpHandler, type HostTool, type McpHandlerOptions } from "./mcp-host.js";
 export { type ToolDefinition } from "./mcp-rpc.js";
 export { DOCUMENT_INFO_TOOL, DOCUMENT_TOOLS, GUIDE_TOOL, type McpDocument } from "./mcp-tools.js";
-export { type Access, type AgentName, createInplaceHandler, createInplaceServer, Document, type Person, QuoteNotFound, type ServerOptions } from "./server.js";
+export { type Access, type AgentName, createPearwriteHandler, createPearwriteServer, Document, type Person, QuoteNotFound, type ServerOptions } from "./server.js";
 export { type DocumentStore, FileStore, MemoryStore, type SideData } from "./store.js";
 export { type JevOptions, jevTagger } from "./tags.js";
 export { ChangeFeed, type PauseBatch } from "./wait.js";

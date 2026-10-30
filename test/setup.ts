@@ -4,4 +4,4 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-process.env.INPLACE_STATE_DIR ??= mkdtempSync(join(tmpdir(), "inplace-state-"));
+process.env.PEARWRITE_STATE_DIR ??= mkdtempSync(join(tmpdir(), "pearwrite-state-"));

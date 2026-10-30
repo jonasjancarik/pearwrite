@@ -12,7 +12,7 @@ import { Document } from "../src/server.js";
 import { jevTagger } from "../src/tags.js";
 
 const store = (log: (line: string) => void = () => {}) =>
-  new CommentStore(join(mkdtempSync(join(tmpdir(), "inplace-tags-")), "comments.json"), log);
+  new CommentStore(join(mkdtempSync(join(tmpdir(), "pearwrite-tags-")), "comments.json"), log);
 /** A tagger that answers when the test says so. */
 function controlled() {
   const asked: { text: string; answer: (tag: CommentTag | undefined) => void }[] = [];
@@ -84,7 +84,7 @@ test("the agent's own comments and deleted comments aren't tagged", async () => 
 });
 
 test("Document.useTagger sends the comment, its quote and the element's text, not the whole document", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-tags-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-tags-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, "<html><body><h1>Secret plan</h1><p>We recieve the beds in May.</p></body></html>");
   const doc = new Document(path, true, () => {}, dir);
@@ -146,7 +146,7 @@ test("jevTagger gives up quietly on errors and timeouts, warning once", async ()
   assert.equal(await tag({ text: "One", element: "" }), undefined);
   assert.equal(await tag({ text: "Two", element: "" }), undefined);
   assert.equal(warnings.length, 1);
-  assert.match(warnings[0], /HTTP 401, check INPLACE_JEV_KEY/);
+  assert.match(warnings[0], /HTTP 401, check PEARWRITE_JEV_KEY/);
 
   const slow = fakeFetch(() => new Promise<Response>(() => {}));
   const hanging = (async (_url: string, init: RequestInit) => {
@@ -167,12 +167,12 @@ test("jevTagger gives up quietly on errors and timeouts, warning once", async ()
 
 const CLI = resolve(import.meta.dirname, "..", "src", "cli.js");
 
-/** Start inplace on a scratch file and return what it prints before it starts listing changes. */
+/** Start Pearwrite on a scratch file and return what it prints before it starts listing changes. */
 function startup(env: Record<string, string | undefined>, args: string[] = []): Promise<string> {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-tags-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-tags-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, "<p>Hi</p>");
-  const { INPLACE_JEV_KEY: _, ...rest } = process.env;
+  const { PEARWRITE_JEV_KEY: _, ...rest } = process.env;
   const proc = spawn(process.execPath, [CLI, path, "--port", "0", "--pause", "0", ...args], { env: { ...rest, ...env }, stdio: ["ignore", "pipe", "inherit"] });
   return new Promise((ok) => {
     let out = "";
@@ -183,10 +183,10 @@ function startup(env: Record<string, string | undefined>, args: string[] = []): 
   });
 }
 
-test("comments are tagged only when INPLACE_JEV_KEY is set, and never with --no-tags", async () => {
+test("comments are tagged only when PEARWRITE_JEV_KEY is set, and never with --no-tags", async () => {
   const notice = /tagged by Jev/;
   assert.doesNotMatch(await startup({}), notice);
-  assert.doesNotMatch(await startup({ INPLACE_JEV_KEY: "  " }), notice);
-  assert.doesNotMatch(await startup({ INPLACE_JEV_KEY: "k-123" }, ["--no-tags"]), notice);
-  assert.match(await startup({ INPLACE_JEV_KEY: "k-123" }), notice);
+  assert.doesNotMatch(await startup({ PEARWRITE_JEV_KEY: "  " }), notice);
+  assert.doesNotMatch(await startup({ PEARWRITE_JEV_KEY: "k-123" }, ["--no-tags"]), notice);
+  assert.match(await startup({ PEARWRITE_JEV_KEY: "k-123" }), notice);
 });

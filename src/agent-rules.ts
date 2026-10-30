@@ -1,5 +1,5 @@
-// What any agent should know about working on a document with the user, as text for its instructions. inplace's
-// MCP servers put it in theirs, and a host with an agent of its own (such as inplace cloud) builds its system
+// What any agent should know about working on a document with the user, as text for its instructions. Pearwrite's
+// MCP servers put it in theirs, and a host with an agent of its own (such as pearwrite-webapp) builds its system
 // prompt from it, so the rules are the same wherever the agent runs. agent-guide.md says the same at length.
 
 /** Added to the descriptions of tools that return the page's text. */

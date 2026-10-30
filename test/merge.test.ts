@@ -44,7 +44,7 @@ test("mergeInner refuses when formatting and a word edit overlap", () => {
 });
 
 function tempDoc(html: string) {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-merge-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-merge-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, html);
   const lines: string[] = [];

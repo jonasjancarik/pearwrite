@@ -11,7 +11,7 @@ export interface BuildInfo {
   dirty?: boolean;
 }
 
-/** Which inplace is running: its package version and, from a checkout, the branch and commit. */
+/** Which Pearwrite is running: its package version and, from a checkout, the branch and commit. */
 export function readBuildInfo(): BuildInfo {
   const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
   let version = "unknown";

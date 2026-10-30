@@ -19,7 +19,7 @@ test.describe("opening a document", () => {
   test("ids are written to the file and nothing else changes", async ({ editor, doc }) => {
     const original = (await import("node:fs")).readFileSync((await import("./fixtures.ts")).EXAMPLE, "utf8");
     await expect(editor.locator("h1")).toHaveAttribute("data-id", "h1-1");
-    const meta = /<meta name="inplace-id" content="[0-9a-f]{12}">/;
+    const meta = /<meta name="pearwrite-id" content="[0-9a-f]{12}">/;
     expect(doc.read()).toMatch(meta);
     expect(doc.read().replace(/ data-id="[^"]+"/g, "").replace(meta, "")).toBe(original);
   });
@@ -34,7 +34,7 @@ test.describe("typing", () => {
     await editor.keyboard.type(" and bikes");
     await expect.poll(() => sourceOf(doc, id)).toContain("drying laundry and bikes");
     expect(doc.read()).toBe(before.replace("drying laundry", "drying laundry and bikes"));
-    await expect(editor.locator("#inplace-status")).toHaveText("Saved");
+    await expect(editor.locator("#pearwrite-status")).toHaveText("Saved");
   });
 
   // Typing and then leaving the page at once, before the save timer runs.
@@ -94,7 +94,7 @@ test.describe("typing with an input method", () => {
 
   test("Enter that confirms a word doesn't split the paragraph", async ({ editor }) => {
     const inserts: string[] = [];
-    editor.on("request", (r) => { if (r.url().endsWith("/__inplace/insert")) inserts.push(r.url()); });
+    editor.on("request", (r) => { if (r.url().endsWith("/__pearwrite/insert")) inserts.push(r.url()); });
     const p = block(editor, "p", "The roof is already used");
     const id = await idOf(p);
     await caretAfter(p, "stands empty.");
@@ -160,7 +160,7 @@ test.describe("formatting", () => {
     const p = block(editor, "p", "The roof is already used");
     const id = await idOf(p);
     await selectText(p, "laundry");
-    const toolbar = editor.locator("#inplace-toolbar");
+    const toolbar = editor.locator("#pearwrite-toolbar");
     await expect(toolbar).toBeVisible();
     await toolbar.getByTitle(/^Bold/).click();
     await expect.poll(() => sourceOf(doc, id)).toContain("drying <strong>laundry</strong>");
@@ -207,7 +207,7 @@ test.describe("formatting", () => {
     const input = editor.getByLabel("Link address");
     await input.fill("javascript:alert(1)");
     await input.press("Enter");
-    await expect(editor.locator("#inplace-status")).toHaveText("Links can start with http, https, mailto or tel");
+    await expect(editor.locator("#pearwrite-status")).toHaveText("Links can start with http, https, mailto or tel");
     await expect(p.locator("a")).toHaveCount(0);
     await p.blur();
     await editor.waitForTimeout(800);
@@ -236,7 +236,7 @@ test.describe("adding and removing", () => {
     const id = await idOf(p);
     await caretAfter(p, "stands empty.");
     await editor.keyboard.press("Enter");
-    await expect(editor.locator("#inplace-status")).toHaveText("Added");
+    await expect(editor.locator("#pearwrite-status")).toHaveText("Added");
     const next = editor.locator(`[data-id="${id}"] + p`);
     await expect(next).toBeFocused();
     await expect(next).toHaveText(/^\s*A structural survey/);
@@ -315,7 +315,7 @@ test.describe("moving", () => {
     await editor.mouse.down();
     await editor.mouse.move(t.x + 40, t.y + t.height - 3, { steps: 8 });
     await editor.mouse.up();
-    await expect(editor.locator("#inplace-status")).toContainText("Moved.");
+    await expect(editor.locator("#pearwrite-status")).toContainText("Moved.");
     const html = doc.read();
     expect(html.indexOf(`data-id="${thirdId}"`)).toBeLessThan(html.indexOf(`data-id="${firstId}"`));
     expect(doc.output).toContain(`moved ${firstId} after ${thirdId}`);
@@ -333,7 +333,7 @@ async function dragFirstItemDown(page: Page): Promise<void> {
   await page.mouse.down();
   await page.mouse.move(t.x + 40, t.y + t.height - 3, { steps: 8 });
   await page.mouse.up();
-  await expect(page.locator("#inplace-status")).toContainText("Moved.");
+  await expect(page.locator("#pearwrite-status")).toContainText("Moved.");
 }
 
 test.describe("undoing", () => {
@@ -342,7 +342,7 @@ test.describe("undoing", () => {
     const first = await idOf(editor.locator("ul > li").first());
     await dragFirstItemDown(editor);
     await expect.poll(() => doc.read()).not.toBe(original);
-    await editor.locator("#inplace-status").getByRole("button", { name: "Undo" }).click();
+    await editor.locator("#pearwrite-status").getByRole("button", { name: "Undo" }).click();
     await expect.poll(() => doc.read()).toBe(original);
     await expect(editor.locator("ul > li").first()).toHaveAttribute("data-id", first);
     expect(doc.output).toMatch(new RegExp(`moved ${first} before \\S+ .*\\(undone\\)`));
@@ -405,7 +405,7 @@ test.describe("showing what changed", () => {
 
     await selectText(p.locator("del"), "autumn");
     await editor.keyboard.press(`${MOD}+Alt+KeyM`);
-    await expect(editor.locator("#inplace-status")).toContainText("Crossed-out text is no longer in the document");
+    await expect(editor.locator("#pearwrite-status")).toContainText("Crossed-out text is no longer in the document");
     await expect(editor.getByRole("dialog", { name: "Comment" })).toBeHidden();
 
     await selectText(p, "confirmed");
@@ -414,7 +414,7 @@ test.describe("showing what changed", () => {
     await box.getByRole("textbox").fill("Who did the survey?");
     await box.getByRole("textbox").press("Enter");
     await expect.poll(() => doc.output).toContain('at "confirmed": "Who did the survey?"');
-    const [comment] = await editor.evaluate(async () => (await (await fetch("/__inplace/comments")).json()).comments);
+    const [comment] = await editor.evaluate(async () => (await (await fetch("/__pearwrite/comments")).json()).comments);
     expect(comment.prefix).toMatch(/last October $/);
     expect(comment.prefix).not.toContain("autumn");
   });
@@ -431,11 +431,11 @@ test.describe("showing what changed", () => {
     const item = block(editor, "li", "Three beds stay open");
     await expect(item.locator("del")).toHaveText(["Two"]);
     await expect(item.locator("ins")).toHaveText(["Three"]);
-    await expect(block(editor, "tr", "Tools")).toHaveClass(/inplace-review-new/);
-    const ghost = editor.locator("ul > .inplace-ghost");
+    await expect(block(editor, "tr", "Tools")).toHaveClass(/pearwrite-review-new/);
+    const ghost = editor.locator("ul > .pearwrite-ghost");
     await expect(ghost).toHaveText(/^Volunteers take turns watering/);
     // The ghost stands where the item was: after the one before it.
-    await expect(editor.locator("ul > *").nth(2)).toHaveClass(/inplace-ghost/);
+    await expect(editor.locator("ul > *").nth(2)).toHaveClass(/pearwrite-ghost/);
 
     // Typing does nothing.
     await p.click();
@@ -444,7 +444,7 @@ test.describe("showing what changed", () => {
 
     await editor.getByRole("region", { name: "What changed" }).getByRole("button", { name: "Done" }).click();
     await expect(editor.getByRole("region", { name: "What changed" })).toBeHidden();
-    await expect(editor.locator("ins, del, .inplace-ghost")).toHaveCount(0);
+    await expect(editor.locator("ins, del, .pearwrite-ghost")).toHaveCount(0);
     await expect(block(editor, "p", "October confirmed")).toHaveAttribute("contenteditable", "true");
     await editor.waitForTimeout(800);
     expect(doc.read()).toBe(written);
@@ -522,14 +522,14 @@ test.describe("showing who wrote what", () => {
     writeFileSync(doc.path, doc.read().replace("last autumn confirmed", "last October confirmed"));
     await expect(block(editor, "p", "October confirmed")).toBeVisible();
     await editor.getByRole("button", { name: "Changes" }).click();
-    const bars = editor.locator("#inplace-authors-layer .bar");
+    const bars = editor.locator("#pearwrite-authors-layer .bar");
     await expect(bars).toHaveCount(0);
     await editor.getByRole("switch", { name: "Show who wrote what" }).check();
     // While the change is still to review, its own bar takes the place of this one.
-    await expect(editor.locator("#inplace-pending-layer .bar")).toHaveCount(1);
+    await expect(editor.locator("#pearwrite-pending-layer .bar")).toHaveCount(1);
     await expect(bars).toHaveCount(0);
     await editor.getByRole("button", { name: "Keep: Edited paragraph" }).click();
-    await expect(editor.locator("#inplace-pending-layer .bar")).toHaveCount(0);
+    await expect(editor.locator("#pearwrite-pending-layer .bar")).toHaveCount(0);
     await expect(bars).toHaveCount(1);
     await expect(bars.first()).toHaveAttribute("title", /^Your agent changed this /);
     // The choice is remembered for this document.
@@ -538,7 +538,7 @@ test.describe("showing who wrote what", () => {
     await expect(editor.getByRole("switch", { name: "Show who wrote what" })).toBeChecked();
     await expect(bars).toHaveCount(1);
     await editor.emulateMedia({ media: "print" });
-    await expect(editor.locator("#inplace-authors-layer")).toBeHidden();
+    await expect(editor.locator("#pearwrite-authors-layer")).toBeHidden();
   });
 
   test("bars come back after the server restarts, before anything else changes", async ({ editor, doc }) => {
@@ -547,7 +547,7 @@ test.describe("showing who wrote what", () => {
     await editor.getByRole("button", { name: "Changes" }).click();
     await editor.getByRole("button", { name: "Keep: Edited paragraph" }).click();
     await editor.getByRole("switch", { name: "Show who wrote what" }).check();
-    await expect(editor.locator("#inplace-authors-layer .bar")).toHaveCount(1);
+    await expect(editor.locator("#pearwrite-authors-layer .bar")).toHaveCount(1);
     // Nothing is left to review, so the new server starts with no changes of its own to report.
     doc.stop();
     const again = await serveDoc(doc.path);
@@ -556,7 +556,7 @@ test.describe("showing who wrote what", () => {
       // A new port is a new origin, so the remembered switch is off here.
       await editor.getByRole("button", { name: "Changes" }).click();
       await editor.getByRole("switch", { name: "Show who wrote what" }).check();
-      await expect(editor.locator("#inplace-authors-layer .bar")).toHaveCount(1);
+      await expect(editor.locator("#pearwrite-authors-layer .bar")).toHaveCount(1);
     } finally {
       again.stop();
     }
@@ -571,23 +571,23 @@ test.describe("reviewing the agent's changes", () => {
       .replace("last autumn confirmed", "last October confirmed")
       .replace("raising monthly contributions", "raising the monthly contributions")
       .replace(/(<p data-id="p-\d+">The association)/, "<p>The beds arrive in April.</p>\n$1"));
-    const bars = editor.locator("#inplace-pending-layer .bar");
+    const bars = editor.locator("#pearwrite-pending-layer .bar");
     await expect(bars).toHaveCount(3);
 
     // Pointing at a changed paragraph offers Keep and Undo beside it.
     const survey = block(editor, "p", "The roof is already used");
     await survey.hover();
-    const actions = editor.locator("#inplace-pending-actions");
+    const actions = editor.locator("#pearwrite-pending-actions");
     await expect(actions).toBeVisible();
     await actions.getByRole("button", { name: "Undo your agent's change to this paragraph" }).click();
     await expect(survey).toContainText("last autumn confirmed");
     await expect(bars).toHaveCount(2);
     // The undone change is the user's, so it isn't highlighted as the agent's.
-    await expect(survey).not.toHaveClass(/inplace-changed/);
+    await expect(survey).not.toHaveClass(/pearwrite-changed/);
 
     // The list of changes has the rest, with the new paragraph.
     await editor.getByRole("button", { name: "Changes" }).click();
-    const review = editor.locator("#inplace-changes .to-review");
+    const review = editor.locator("#pearwrite-changes .to-review");
     await expect(review.getByRole("heading")).toHaveText("Your agent’s changes to review (2)");
     await review.getByRole("button", { name: "Undo: New paragraph" }).click();
     await expect(block(editor, "p", "The beds arrive in April")).toHaveCount(0);
@@ -614,13 +614,13 @@ test.describe("reviewing the agent's changes", () => {
     writeFileSync(doc.path, original
       .replace("last autumn confirmed", "last October confirmed")
       .replace("raising monthly contributions", "raising the monthly contributions"));
-    const bars = editor.locator("#inplace-pending-layer .bar");
+    const bars = editor.locator("#pearwrite-pending-layer .bar");
     await expect(bars).toHaveCount(2);
-    const announced = editor.locator("#inplace-announce");
+    const announced = editor.locator("#pearwrite-announce");
 
     const survey = block(editor, "p", "The roof is already used");
     await caretAfter(survey, "already");
-    const actions = editor.locator("#inplace-pending-actions");
+    const actions = editor.locator("#pearwrite-pending-actions");
     await expect(actions.getByRole("button", { name: "Keep your agent's change to this paragraph" })).toHaveAttribute("title", /Alt\+Shift\+K|⌥⇧K/);
     await editor.keyboard.press("Alt+Shift+KeyU");
     await expect(survey).toContainText("last autumn confirmed");
@@ -642,7 +642,7 @@ test.describe("reviewing the agent's changes", () => {
     writeFileSync(doc.path, original
       .replace("last autumn confirmed", "last October confirmed")
       .replace("raising monthly contributions", "raising the monthly contributions"));
-    await expect(editor.locator("#inplace-pending-layer .bar")).toHaveCount(2);
+    await expect(editor.locator("#pearwrite-pending-layer .bar")).toHaveCount(2);
     // The user then changes the agent's new word, so that change can't be undone in the copy.
     const survey = block(editor, "p", "The roof is already used");
     await selectText(survey, "October");
@@ -652,7 +652,7 @@ test.describe("reviewing the agent's changes", () => {
     const changed = doc.read();
 
     await editor.getByRole("button", { name: "Changes" }).click();
-    const review = editor.locator("#inplace-changes .to-review");
+    const review = editor.locator("#pearwrite-changes .to-review");
     const [download] = await Promise.all([editor.waitForEvent("download"), review.getByRole("button", { name: "Download" }).click()]);
     expect(download.suggestedFilename()).toBe("doc (before your agent's changes).html");
     const saved = readFileSync((await download.path())!, "utf8");
@@ -679,7 +679,7 @@ test.describe("reviewing the agent's changes", () => {
       .replace("last autumn confirmed", "last October confirmed")
       .replace("Lightweight roof mix", "Light roof mix")
       .replace("Two beds stay open", "Two beds are kept open"));
-    const bars = editor.locator("#inplace-pending-layer .bar");
+    const bars = editor.locator("#pearwrite-pending-layer .bar");
     await expect(bars).toHaveCount(3);
     const lefts = await bars.evaluateAll((all) => all.map((b) => b.getBoundingClientRect().left));
     expect(new Set(lefts).size).toBe(1);
@@ -692,10 +692,10 @@ test.describe("reviewing the agent's changes", () => {
     const doc = await startDoc(undefined, `<!doctype html><title>t</title>${html}`);
     try {
       await page.goto(doc.url);
-      await page.waitForFunction(() => document.querySelector("#inplace-toolbar"));
+      await page.waitForFunction(() => document.querySelector("#pearwrite-toolbar"));
       writeFileSync(doc.path, edits.reduce((text, [from, to]) => text.replace(from, to), doc.read()));
-      await expect(page.locator("#inplace-pending-layer .bar")).toHaveCount(edits.length);
-      const bars = await page.locator("#inplace-pending-layer .bar").evaluateAll((all) => all.map((b) => b.getBoundingClientRect().left + 4));
+      await expect(page.locator("#pearwrite-pending-layer .bar")).toHaveCount(edits.length);
+      const bars = await page.locator("#pearwrite-pending-layer .bar").evaluateAll((all) => all.map((b) => b.getBoundingClientRect().left + 4));
       const boxes = await Promise.all(blocks.map(([sel, text]) => block(page, sel, text).evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect)));
       return { bars, boxes };
     } finally {
@@ -748,16 +748,16 @@ test.describe("working alongside an agent", () => {
       .replace(/(<tr[^>]*><td[^>]*>Water<)/, "<tr><td>Tools</td><td>Spades and gloves</td><td>€150</td></tr>\n$1"));
 
     await expect(h1).toHaveText("A garden on the roof of building B");
-    const pill = editor.locator("#inplace-status");
+    const pill = editor.locator("#pearwrite-status");
     await expect(pill).toContainText("Your agent made 3 changes. 2 are out of view.");
     // In a paragraph only the changed words are tinted; a new row is tinted whole.
     await expect.poll(() => highlighted(editor)).toEqual(["of building B", "Three"]);
-    await expect(h1).not.toHaveClass(/inplace-changed/);
-    await expect(block(editor, "li", "Three beds stay open")).toHaveClass(/inplace-changed-words/);
-    await expect(block(editor, "tr", "Tools")).toHaveClass(/inplace-changed\b/);
-    await expect(editor.locator("table")).not.toHaveClass(/inplace-changed/);
-    await expect(editor.locator(".inplace-changed, .inplace-changed-fade")).toHaveCount(1);
-    await expect(mine).not.toHaveClass(/inplace-changed/);
+    await expect(h1).not.toHaveClass(/pearwrite-changed/);
+    await expect(block(editor, "li", "Three beds stay open")).toHaveClass(/pearwrite-changed-words/);
+    await expect(block(editor, "tr", "Tools")).toHaveClass(/pearwrite-changed\b/);
+    await expect(editor.locator("table")).not.toHaveClass(/pearwrite-changed/);
+    await expect(editor.locator(".pearwrite-changed, .pearwrite-changed-fade")).toHaveCount(1);
+    await expect(mine).not.toHaveClass(/pearwrite-changed/);
 
     await pill.getByRole("button", { name: "Show" }).click();
     await expect(block(editor, "tr", "Tools")).toBeInViewport();
@@ -765,12 +765,12 @@ test.describe("working alongside an agent", () => {
     await pill.getByRole("button", { name: "Show" }).click();
     await expect(pill).toHaveText("Your agent made 3 changes.");
     // Once seen, the tint fades away.
-    await expect(editor.locator(".inplace-changed, .inplace-changed-fade")).toHaveCount(0, { timeout: 8_000 });
+    await expect(editor.locator(".pearwrite-changed, .pearwrite-changed-fade")).toHaveCount(0, { timeout: 8_000 });
     await expect.poll(() => highlighted(editor), { timeout: 8_000 }).toEqual([]);
   });
 
   test("the corner button lists your changes and the agent's, and stays open while the agent works", async ({ editor, doc }) => {
-    const corner = editor.locator("#inplace-corner");
+    const corner = editor.locator("#pearwrite-corner");
     await expect(corner).toBeVisible();
     const mine = block(editor, "p", "The roof is already used");
     await caretAfter(mine, "drying laundry");
@@ -810,7 +810,7 @@ test.describe("working alongside an agent", () => {
     await expect(entries.nth(0)).toContainText("Edited heading");
 
     await entries.nth(0).getByRole("button", { name: /New table row/ }).click();
-    await expect(block(editor, "tr", "Tools")).toHaveClass(/inplace-changed/);
+    await expect(block(editor, "tr", "Tools")).toHaveClass(/pearwrite-changed/);
     // Showing an edited paragraph again lights up only its changed words.
     await item.click();
     await expect.poll(() => highlighted(editor)).toContain("and flowers");
@@ -902,7 +902,7 @@ test.describe("working alongside an agent", () => {
     const old = await p.evaluate((el) => el.innerHTML);
     doc.edit("The roof is already used for drying laundry", "AGENT: The roof is used for laundry");
     // A save from a page that still shows the old text, as in a race with the agent.
-    const status = await editor.evaluate(async ({ id, old }) => (await fetch("/__inplace/save", {
+    const status = await editor.evaluate(async ({ id, old }) => (await fetch("/__pearwrite/save", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, old, new: old.replace("drying laundry", "MINE: hanging washing") }),
@@ -932,9 +932,9 @@ test.describe("working alongside an agent", () => {
     // The agent may be reading the terminal output, so nothing is claimed about it.
     await expect(line).toHaveText("If your agent doesn't react to your edits, ask it to check them.");
 
-    // An agent starts `inplace wait`, then goes away.
+    // An agent starts `pearwrite wait`, then goes away.
     const port = Number(new URL(doc.url).port);
-    const wait = (await import("node:http")).get({ host: "127.0.0.1", port, path: "/__inplace/wait", headers: { host: `localhost:${port}` } });
+    const wait = (await import("node:http")).get({ host: "127.0.0.1", port, path: "/__pearwrite/wait", headers: { host: `localhost:${port}` } });
     wait.on("error", () => {});
     await expect(line).toHaveText("Your agent is waiting for your next pause.");
     wait.destroy();
@@ -983,7 +983,7 @@ test.describe("pages with unusual styles and parts", () => {
     const doc = await startDoc(undefined, html);
     try {
       await page.goto(doc.url);
-      await page.waitForFunction(() => document.querySelector("#inplace-toolbar"));
+      await page.waitForFunction(() => document.querySelector("#pearwrite-toolbar"));
       await body(doc);
     } finally {
       doc.stop();
@@ -1022,7 +1022,7 @@ test.describe("pages with unusual styles and parts", () => {
       const a = await addLink(page);
       await expect(a).toHaveCount(1);
       expect(await decoration(a)).toBe("none");
-      await expect(page.locator("html")).not.toHaveClass(/inplace-plain-links/);
+      await expect(page.locator("html")).not.toHaveClass(/pearwrite-plain-links/);
     });
   });
 
@@ -1041,7 +1041,7 @@ test.describe("pages with unusual styles and parts", () => {
   test("Show opens a closed details and a tab panel to reach the agent's changes", async ({ page }) => {
     await withDoc(page, PARTS, async (doc) => {
       writeFileSync(doc.path, doc.read().replace("Folded text here", "Folded words here").replace("Beta panel text", "Beta panel words"));
-      const pill = page.locator("#inplace-status");
+      const pill = page.locator("#pearwrite-status");
       await expect(pill).toContainText("Your agent made 2 changes. 2 are out of view.");
       await pill.getByRole("button", { name: "Show" }).click();
       await expect(block(page, "p", "Folded words here")).toBeVisible();
@@ -1057,7 +1057,7 @@ test.describe("pages with unusual styles and parts", () => {
   test("the list of changes opens the tab panel a change is in", async ({ page }) => {
     await withDoc(page, PARTS, async (doc) => {
       doc.edit("Beta panel text", "Beta panel words");
-      await expect(page.locator("#inplace-status")).toContainText("One is out of view.");
+      await expect(page.locator("#pearwrite-status")).toContainText("One is out of view.");
       await page.getByRole("button", { name: "Changes" }).click();
       await page.getByRole("dialog", { name: "Changes" }).locator(".entry").getByRole("button", { name: /Edited paragraph/ }).click();
       await expect(block(page, "p", "Beta panel words")).toBeVisible();
@@ -1068,7 +1068,7 @@ test.describe("pages with unusual styles and parts", () => {
   test("a change that can't be shown says so", async ({ page }) => {
     await withDoc(page, PARTS, async (doc) => {
       doc.edit("Hidden for good", "Hidden for ever");
-      const pill = page.locator("#inplace-status");
+      const pill = page.locator("#pearwrite-status");
       await expect(pill).toContainText("One is out of view.");
       await pill.getByRole("button", { name: "Show" }).click();
       await expect(pill).toHaveText("This change is in a part of the page that's hidden.");
@@ -1093,8 +1093,8 @@ test.describe("blocks changed by the page's scripts", () => {
       await expect(page.locator('[data-id="td-1"]')).toHaveAttribute("contenteditable", "true");
       // After an agent's edit elsewhere, the filled-in cell isn't shown as changed.
       doc.edit("two", "three");
-      await expect(page.locator('[data-id="td-1"]')).toHaveClass(/inplace-changed/);
-      await expect(total).not.toHaveClass(/inplace-changed/);
+      await expect(page.locator('[data-id="td-1"]')).toHaveClass(/pearwrite-changed/);
+      await expect(total).not.toHaveClass(/pearwrite-changed/);
     } finally {
       doc.stop();
     }
@@ -1137,13 +1137,13 @@ test.describe("blocks changed by the page's scripts", () => {
 test.describe("comments", () => {
   /** The text of each comment highlight on the page. */
   const highlighted = (page: Page) => page.evaluate(() =>
-    [...((CSS as any).highlights.get("inplace-comment") ?? [])].map((r: Range) => r.toString()));
+    [...((CSS as any).highlights.get("pearwrite-comment") ?? [])].map((r: Range) => r.toString()));
 
   test("select text, add a comment, and it stays on that text through a reload and the agent's edits", async ({ editor, doc }) => {
     const para = block(editor, "p", "The roof is already used");
     const id = await idOf(para);
     await selectText(para, "drying laundry");
-    await editor.locator("#inplace-toolbar").getByRole("button", { name: "Comment" }).click();
+    await editor.locator("#pearwrite-toolbar").getByRole("button", { name: "Comment" }).click();
     const box = editor.getByRole("dialog", { name: "Comment" });
     await box.getByRole("textbox").fill("Which buildings share it?");
     await box.getByRole("textbox").press("Enter");
@@ -1167,7 +1167,7 @@ test.describe("comments", () => {
 
     await editor.reload();
     await expect.poll(() => highlighted(editor)).toEqual(["drying laundry"]);
-    await expect(editor.locator("#inplace-comment-layer .marker")).toHaveCount(1);
+    await expect(editor.locator("#pearwrite-comment-layer .marker")).toHaveCount(1);
 
     // The agent rewrites the paragraph around the quote: the comment follows it.
     doc.edit("The roof is already used for drying laundry", "Today the roof is only used for drying laundry");
@@ -1188,7 +1188,7 @@ test.describe("comments", () => {
       "--reply", "Buildings A and B.", "--port", new URL(doc.url).port]);
     await expect(listed).toContainText("Done");
     await expect(listed).toContainText("Your agent: Buildings A and B.");
-    await expect(editor.locator("#inplace-comment-layer .marker")).toHaveCount(0);
+    await expect(editor.locator("#pearwrite-comment-layer .marker")).toHaveCount(0);
     await editor.getByRole("button", { name: "Clear done comments" }).click();
     await expect(listed).toHaveCount(0);
   });
@@ -1200,7 +1200,7 @@ test.describe("comments", () => {
     await editor.keyboard.press("Shift+ArrowLeft");
     await editor.keyboard.press("Shift+ArrowLeft");
     await editor.keyboard.press("Shift+ArrowLeft");
-    await expect(editor.locator("#inplace-toolbar").getByRole("button", { name: "Comment" })).toBeVisible();
+    await expect(editor.locator("#pearwrite-toolbar").getByRole("button", { name: "Comment" })).toBeVisible();
     await editor.keyboard.press("Control+Alt+KeyM");
     const box = editor.getByRole("dialog", { name: "Comment" });
     await expect(box).toBeVisible();
@@ -1213,13 +1213,13 @@ test.describe("comments", () => {
     const chart = editor.locator("svg[data-id]").first();
     await chart.scrollIntoViewIfNeeded();
     await chart.hover();
-    await editor.locator("#inplace-comment-here").click();
+    await editor.locator("#pearwrite-comment-here").click();
     const box = editor.getByRole("dialog", { name: "Comment" });
     await expect(box).toContainText("Comment on this chart");
     await box.getByRole("textbox").fill("Same order as the table, please.");
     await box.getByRole("button", { name: "Add comment" }).click();
     await expect.poll(() => doc.output).toMatch(/comment #1 on svg-\d+: "Same order as the table, please."/);
-    await editor.locator("#inplace-comment-layer .marker").click();
+    await editor.locator("#pearwrite-comment-layer .marker").click();
     await expect(box).toContainText("Same order as the table, please.");
     await box.getByRole("button", { name: "Delete" }).click();
     await expect.poll(() => doc.output).toContain("comment #1 deleted");
@@ -1230,15 +1230,15 @@ test.describe("comments", () => {
     const id = await editor.locator("h1[data-id]").getAttribute("data-id");
     execFileSync(process.execPath, [CLI, "comment", id!, "Should the title say garden or orchard?", "--port", port,
       "--option", "Garden", "--option", "Orchard, and change the rest too"]);
-    await expect(editor.locator("#inplace-comment-layer .marker.agent")).toHaveCount(1);
-    await editor.locator("#inplace-comment-layer .marker").click();
+    await expect(editor.locator("#pearwrite-comment-layer .marker.agent")).toHaveCount(1);
+    await editor.locator("#pearwrite-comment-layer .marker").click();
     const box = editor.getByRole("dialog", { name: "Comment" });
     await expect(box.locator(".choices button")).toHaveText(["Garden", "Orchard, and change the rest too", "Write your own"]);
     await box.getByRole("button", { name: "Garden" }).click();
     await expect.poll(() => doc.output).toContain('comment #1 answered by the user: "Garden"');
 
     // Once answered, the suggestions are gone and the answer can still be changed in words.
-    await editor.locator("#inplace-comment-layer .marker").click();
+    await editor.locator("#pearwrite-comment-layer .marker").click();
     await expect(box).toContainText("You: Garden");
     await expect(box.locator(".choices")).toHaveCount(0);
     await box.getByRole("button", { name: "Change answer" }).click();
@@ -1250,8 +1250,8 @@ test.describe("comments", () => {
   test("Write your own replaces the suggested answers with a text field", async ({ editor, doc }) => {
     const id = await editor.locator("h1[data-id]").getAttribute("data-id");
     execFileSync(process.execPath, [CLI, "comment", id!, "Shorter title?", "--port", new URL(doc.url).port, "--option", "Yes"]);
-    await expect(editor.locator("#inplace-comment-layer .marker")).toHaveCount(1);
-    await editor.locator("#inplace-comment-layer .marker").click();
+    await expect(editor.locator("#pearwrite-comment-layer .marker")).toHaveCount(1);
+    await editor.locator("#pearwrite-comment-layer .marker").click();
     const box = editor.getByRole("dialog", { name: "Comment" });
     await box.getByRole("button", { name: "Write your own" }).click();
     await expect(box.locator(".choices")).toHaveCount(0);
@@ -1266,7 +1266,7 @@ test.describe("comments being written while the agent edits", () => {
     const para = block(editor, "p", "The roof is already used");
     const id = await idOf(para);
     await selectText(para, "drying laundry");
-    await editor.locator("#inplace-toolbar").getByRole("button", { name: "Comment" }).click();
+    await editor.locator("#pearwrite-toolbar").getByRole("button", { name: "Comment" }).click();
     const box = editor.getByRole("dialog", { name: "Comment" });
     await box.getByRole("textbox").pressSequentially("Which buildings");
 
@@ -1315,15 +1315,15 @@ test.describe("comments being written while the agent edits", () => {
 test("an agent waiting for pauses gets an eye beside the block you edited, then a check that fades", async ({ page }) => {
   const doc = await startDoc(undefined, undefined, ["--pause", "0.4"]);
   const port = new URL(doc.url).port;
-  // An agent in the `inplace wait` loop, as Codex runs it.
+  // An agent in the `pearwrite wait` loop, as Codex runs it.
   const wait = () => new Promise<void>((ok, fail) =>
     execFile(process.execPath, [CLI, "wait", "--port", port], (e) => (e ? fail(e) : ok())));
   try {
     await page.goto(doc.url);
-    await page.waitForFunction(() => document.querySelector("#inplace-toolbar"));
+    await page.waitForFunction(() => document.querySelector("#pearwrite-toolbar"));
     const para = block(page, "p", "The roof is already used");
     const id = await idOf(para);
-    const mark = page.locator(`#inplace-seen-layer .seen[data-for="${id}"]`);
+    const mark = page.locator(`#pearwrite-seen-layer .seen[data-for="${id}"]`);
 
     let waiting = wait();
     await caretAfter(para, "drying laundry");
@@ -1331,7 +1331,7 @@ test("an agent waiting for pauses gets an eye beside the block you edited, then 
     await waiting;
     await expect(mark).toHaveAttribute("aria-label", "Your agent picked up this change.");
     expect(await para.locator(".seen").count()).toBe(0);
-    expect(doc.read()).not.toContain("inplace-seen");
+    expect(doc.read()).not.toContain("pearwrite-seen");
 
     // Editing the block again takes the mark away until the agent has that change too.
     await page.keyboard.type(" again");
@@ -1344,7 +1344,7 @@ test("an agent waiting for pauses gets an eye beside the block you edited, then 
     void wait().catch(() => {});
     await expect(mark).toHaveAttribute("aria-label", "Your agent checked this change.");
     await expect(mark).toHaveCount(0, { timeout: 5_000 });
-    expect(doc.read()).not.toContain("inplace-seen");
+    expect(doc.read()).not.toContain("pearwrite-seen");
   } finally {
     doc.stop();
   }
@@ -1354,7 +1354,7 @@ test.describe("pages that can only be commented on or read", () => {
   const open = async (page: import("@playwright/test").Page, flag: string) => {
     const doc = await startDoc(undefined, undefined, [flag]);
     await page.goto(doc.url);
-    await page.waitForFunction(() => document.querySelector("#inplace-toolbar"));
+    await page.waitForFunction(() => document.querySelector("#pearwrite-toolbar"));
     return doc;
   };
 
@@ -1367,12 +1367,12 @@ test.describe("pages that can only be commented on or read", () => {
       await para.click();
       await page.keyboard.type("nope");
       await hoverBlock(page, para);
-      await expect(page.locator("#inplace-ui button")).toHaveCount(0);
+      await expect(page.locator("#pearwrite-ui button")).toHaveCount(0);
       expect(doc.read()).toBe(before);
 
       // Selecting words offers Comment and nothing else.
       await selectText(para, "drying laundry");
-      const toolbar = page.locator("#inplace-toolbar");
+      const toolbar = page.locator("#pearwrite-toolbar");
       await expect(toolbar.getByRole("button", { name: "Comment" })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "Bold" })).toBeHidden();
       await expect(toolbar.locator("[data-format]").first()).toBeHidden();
@@ -1381,10 +1381,10 @@ test.describe("pages that can only be commented on or read", () => {
       await box.getByRole("textbox").fill("Which buildings share it?");
       await box.getByRole("button", { name: "Add comment" }).click();
       await expect.poll(() => doc.output).toContain(`at "drying laundry": "Which buildings share it?"`);
-      await expect(page.locator("#inplace-comment-layer .marker")).toHaveCount(1);
+      await expect(page.locator("#pearwrite-comment-layer .marker")).toHaveCount(1);
 
       // The list of changes says what this page allows.
-      await page.locator("#inplace-corner").click();
+      await page.locator("#pearwrite-corner").click();
       await expect(page.getByRole("dialog", { name: "Changes" })).toContainText("You can comment on this document, but not edit it.");
       expect(doc.read()).toBe(before);
     } finally {
@@ -1398,12 +1398,12 @@ test.describe("pages that can only be commented on or read", () => {
       // The last paragraph on the page: a triple-click ends its selection inside the toolbar.
       const para = page.locator("footer[data-id]");
       await para.click({ clickCount: 3, position: { x: 5, y: 5 } });
-      const toolbar = page.locator("#inplace-toolbar");
+      const toolbar = page.locator("#pearwrite-toolbar");
       await expect(toolbar.getByRole("button", { name: "Comment" })).toBeVisible();
       await toolbar.getByRole("button", { name: "Comment" }).click();
       const box = page.getByRole("dialog", { name: "Comment" });
       await expect(box.getByRole("textbox")).toBeVisible();
-      await expect(page.locator("#inplace-status")).not.toContainText("Crossed-out");
+      await expect(page.locator("#pearwrite-status")).not.toContainText("Crossed-out");
       await box.getByRole("textbox").fill("Who wrote this?");
       await box.getByRole("button", { name: "Add comment" }).click();
       await expect.poll(() => doc.output).toContain(`comment #1 on footer-1 at "Prepared by the garden working group.`);
@@ -1418,21 +1418,21 @@ test.describe("pages that can only be commented on or read", () => {
       const para = block(page, "p", "The roof is already used");
       const id = await idOf(para);
       execFileSync(process.execPath, [CLI, "comment", id, "Is this right?", "--port", new URL(doc.url).port]);
-      await expect(page.locator("#inplace-comment-layer .marker")).toHaveCount(1);
+      await expect(page.locator("#pearwrite-comment-layer .marker")).toHaveCount(1);
       await expect(page.locator("[contenteditable]")).toHaveCount(0);
 
       await selectText(para, "drying laundry");
-      await expect(page.locator("#inplace-toolbar")).toBeHidden();
+      await expect(page.locator("#pearwrite-toolbar")).toBeHidden();
       await page.keyboard.press("Control+Alt+KeyM");
       await expect(page.getByRole("dialog", { name: "Comment" })).toBeHidden();
 
       // The comment can be read but not changed.
-      await page.locator("#inplace-comment-layer .marker").click();
+      await page.locator("#pearwrite-comment-layer .marker").click();
       const box = page.getByRole("dialog", { name: "Comment" });
       await expect(box).toContainText("Is this right?");
       await expect(box.getByRole("button", { name: /Answer|Dismiss|Edit|Delete/ })).toHaveCount(0);
 
-      await page.locator("#inplace-corner").click();
+      await page.locator("#pearwrite-corner").click();
       await expect(page.getByRole("dialog", { name: "Changes" })).toContainText("You can read this document, but not edit it or comment on it.");
     } finally {
       doc.stop();

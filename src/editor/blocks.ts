@@ -57,8 +57,8 @@ if (hashes) {
   const watcher = new MutationObserver(check);
   watcher.observe(document.body, { childList: true, characterData: true, subtree: true });
   const userEdit = (e: Event) => {
-    // Clicking into text isn't an edit yet; clicking inplace's own buttons can be.
-    if (!(e.target as Element).closest?.(e.type === "pointerdown" ? "[data-inplace-ui]" : "[data-id][contenteditable=true]")) return;
+    // Clicking into text isn't an edit yet; clicking Pearwrite's own buttons can be.
+    if (!(e.target as Element).closest?.(e.type === "pointerdown" ? "[data-pearwrite-ui]" : "[data-id][contenteditable=true]")) return;
     check(watcher.takeRecords());
     stopWatching();
   };

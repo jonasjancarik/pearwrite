@@ -3,8 +3,8 @@
 const AUTHORS_FLAG = `${STATE_KEY}:show-authors`;
 let showAuthors = false;
 try { showAuthors = localStorage.getItem(AUTHORS_FLAG) === "1"; } catch {}
-const authorLayer = make("div", { id: "inplace-authors-layer" });
-authorLayer.dataset.inplaceUi = "";
+const authorLayer = make("div", { id: "pearwrite-authors-layer" });
+authorLayer.dataset.pearwriteUi = "";
 
 const AGENT_COLOUR = "#4a7bd4";
 const PEOPLE_COLOURS = ["#3f8f5c", "#c2761f", "#8a5cc7", "#c24a7a", "#2f8f9a"];

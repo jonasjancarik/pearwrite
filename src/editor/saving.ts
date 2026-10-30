@@ -52,7 +52,7 @@ async function save(el: HTMLElement): Promise<boolean> {
     if (res.ok) {
       saved.set(id, html);
       version = body.version;
-      el.classList.remove("inplace-conflict");
+      el.classList.remove("pearwrite-conflict");
       if (body.merged) {
         // The file had a newer version of this block; the server combined
         // both. Show the combined text.
@@ -64,7 +64,7 @@ async function save(el: HTMLElement): Promise<boolean> {
     if (res.status === 409) {
       // The file's version of this block changed in the same words. The
       // server kept the user's version in its stash; show the file's.
-      el.classList.add("inplace-conflict");
+      el.classList.add("pearwrite-conflict");
       rememberConflict(id);
       showStashCount(body.stash);
       showStatus("Your agent changed the same words while you were typing. Your version is kept under \u201cSet aside\u201d at the bottom left.", "error", true);
@@ -85,7 +85,7 @@ async function post(action: string, payload: object): Promise<{ ok: boolean; sta
   busy++;
   try {
     const body = JSON.stringify(payload);
-    const res = await fetch(`/__inplace/${action}`, {
+    const res = await fetch(`/__pearwrite/${action}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body,
@@ -134,7 +134,7 @@ addEventListener("pagehide", () => {
     if (html === saved.get(id)) continue;
     const body = JSON.stringify({ id, old: saved.get(id), new: html });
     if (!fits(body)) continue;
-    fetch("/__inplace/save", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body })
+    fetch("/__pearwrite/save", { method: "POST", keepalive: true, headers: { "Content-Type": "application/json" }, body })
       .catch(() => {});
     saved.set(id, html);
   }

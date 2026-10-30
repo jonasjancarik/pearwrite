@@ -11,14 +11,14 @@ import { test } from "node:test";
 import { AGENT, YOU } from "../src/history.js";
 
 import { BlockConflict } from "../src/htmldoc.js";
-import { allowedHostName, createInplaceServer, Document, isLocalHost, type ServerOptions } from "../src/server.js";
+import { allowedHostName, createPearwriteServer, Document, isLocalHost, type ServerOptions } from "../src/server.js";
 
 /** A server for a one-paragraph document, and a raw request helper that sets every header itself. */
 async function start(options: ServerOptions = {}) {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-server-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-server-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Hello</p></body></html>');
-  const server = createInplaceServer(new Document(path, true, () => {}, dir), options);
+  const server = createPearwriteServer(new Document(path, true, () => {}, dir), options);
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   const port = (server.address() as AddressInfo).port;
   const send = (method: string, path: string, headers: Record<string, string>, body?: string) =>
@@ -40,7 +40,7 @@ test("a same-origin JSON change is saved", async () => {
   const s = await start();
   try {
     const host = `localhost:${s.port}`;
-    const res = await s.send("POST", "/__inplace/insert",
+    const res = await s.send("POST", "/__pearwrite/insert",
       { host, origin: `http://${host}`, "content-type": "application/json" },
       JSON.stringify({ id: "p-1", position: "after", tag: "p", content: "World" }));
     assert.equal(res.status, 200, res.body);
@@ -53,7 +53,7 @@ test("a same-origin JSON change is saved", async () => {
 test("a change from another website is refused", async () => {
   const s = await start();
   try {
-    const res = await s.send("POST", "/__inplace/insert",
+    const res = await s.send("POST", "/__pearwrite/insert",
       { host: `127.0.0.1:${s.port}`, origin: "https://evil.example", "content-type": "application/json" }, insert);
     assert.equal(res.status, 403);
     assert.doesNotMatch(readFileSync(s.path, "utf8"), /script/);
@@ -65,7 +65,7 @@ test("a change from another website is refused", async () => {
 test("a text/plain change, which browsers send cross-origin without asking, is refused", async () => {
   const s = await start();
   try {
-    const res = await s.send("POST", "/__inplace/insert", { host: `127.0.0.1:${s.port}`, "content-type": "text/plain" }, insert);
+    const res = await s.send("POST", "/__pearwrite/insert", { host: `127.0.0.1:${s.port}`, "content-type": "text/plain" }, insert);
     assert.equal(res.status, 403);
     assert.doesNotMatch(readFileSync(s.path, "utf8"), /script/);
   } finally {
@@ -77,14 +77,14 @@ test("requests for an unknown host name are refused (DNS rebinding)", async () =
   const s = await start();
   try {
     const host = `attacker.example:${s.port}`;
-    const post = await s.send("POST", "/__inplace/insert",
+    const post = await s.send("POST", "/__pearwrite/insert",
       { host, origin: `http://${host}`, "content-type": "application/json" }, insert);
     assert.equal(post.status, 403);
     assert.doesNotMatch(readFileSync(s.path, "utf8"), /script/);
-    for (const path of ["/", "/__inplace/history", "/__inplace/stash"]) {
+    for (const path of ["/", "/__pearwrite/history", "/__pearwrite/stash"]) {
       assert.equal((await s.send("GET", path, { host })).status, 403, path);
     }
-    assert.equal((await s.send("GET", "/__inplace/history", { host: `localhost:${s.port}` })).status, 200);
+    assert.equal((await s.send("GET", "/__pearwrite/history", { host: `localhost:${s.port}` })).status, 200);
   } finally {
     s.close();
   }
@@ -117,7 +117,7 @@ test("--allow-host adds exact names, such as a Tailscale MagicDNS name, and noth
   try {
     const host = `mymac.tail1234.ts.net:${s.port}`;
     assert.equal((await s.send("GET", "/", { host })).status, 200);
-    const res = await s.send("POST", "/__inplace/insert",
+    const res = await s.send("POST", "/__pearwrite/insert",
       { host, origin: `http://${host}`, "content-type": "application/json" },
       JSON.stringify({ id: "p-1", position: "after", tag: "p", content: "World" }));
     assert.equal(res.status, 200, res.body);
@@ -132,22 +132,22 @@ test("comments are added from the page, listed, and resolved by the agent", asyn
   try {
     const host = `localhost:${s.port}`;
     const page = { host, origin: `http://${host}`, "content-type": "application/json" };
-    const add = await s.send("POST", "/__inplace/comment", page,
+    const add = await s.send("POST", "/__pearwrite/comment", page,
       JSON.stringify({ action: "add", id: "p-1", text: "Say hello to whom?", quote: "Hello", prefix: "", suffix: "" }));
     assert.equal(add.status, 200, add.body);
-    assert.equal((await s.send("POST", "/__inplace/comment", page, JSON.stringify({ action: "add", id: "p-9", text: "x" }))).status, 404);
+    assert.equal((await s.send("POST", "/__pearwrite/comment", page, JSON.stringify({ action: "add", id: "p-9", text: "x" }))).status, 404);
     // The agent resolves from the command line: no Origin header.
-    const resolved = await s.send("POST", "/__inplace/comment", { host, "content-type": "application/json" },
+    const resolved = await s.send("POST", "/__pearwrite/comment", { host, "content-type": "application/json" },
       JSON.stringify({ action: "resolve", n: 1, reply: "Added a name." }));
     assert.equal(resolved.status, 200, resolved.body);
-    const listed = JSON.parse((await s.send("GET", "/__inplace/comments", { host })).body);
+    const listed = JSON.parse((await s.send("GET", "/__pearwrite/comments", { host })).body);
     assert.deepEqual(listed.comments.map((c: { n: number; status: string; reply: string }) => [c.n, c.status, c.reply]),
       [[1, "done", "Added a name."]]);
-    assert.equal(JSON.parse((await s.send("GET", "/__inplace/comments?open=1", { host })).body).comments.length, 0);
-    const other = await s.send("POST", "/__inplace/comment",
+    assert.equal(JSON.parse((await s.send("GET", "/__pearwrite/comments?open=1", { host })).body).comments.length, 0);
+    const other = await s.send("POST", "/__pearwrite/comment",
       { host, origin: "https://evil.example", "content-type": "application/json" }, JSON.stringify({ action: "clear" }));
     assert.equal(other.status, 403);
-    assert.match((await s.send("GET", "/__inplace/anchor.js", { host })).body, /export function findQuote/);
+    assert.match((await s.send("GET", "/__pearwrite/anchor.js", { host })).body, /export function findQuote/);
   } finally {
     s.close();
   }
@@ -160,7 +160,7 @@ test("the agent leaves its own comments, which the page can answer but not forge
     const agent = { host, "content-type": "application/json" };
     const page = { ...agent, origin: `http://${host}` };
     const add = (headers: Record<string, string>, fields: Record<string, unknown>) =>
-      s.send("POST", "/__inplace/comment", headers, JSON.stringify({ action: "add", by: "agent", ...fields }));
+      s.send("POST", "/__pearwrite/comment", headers, JSON.stringify({ action: "add", by: "agent", ...fields }));
 
     const added = await add(agent, { id: "p-1", text: "Hello to whom?", quote: "ell" });
     assert.equal(added.status, 200, added.body);
@@ -172,13 +172,13 @@ test("the agent leaves its own comments, which the page can answer but not forge
     const asked = await add(agent, { id: "p-1", text: "Formal?", options: [" Yes,  formal ", "No", "No", ""] });
     assert.deepEqual(JSON.parse(asked.body).comment.options, ["Yes, formal", "No"]);
     assert.match(JSON.parse((await add(agent, { id: "p-1", text: "x", options: ["a", "b", "c", "d"] })).body).error, /at most 3/);
-    const fromPage = await s.send("POST", "/__inplace/comment", page, JSON.stringify({ action: "add", id: "p-1", text: "x", options: ["a"] }));
+    const fromPage = await s.send("POST", "/__pearwrite/comment", page, JSON.stringify({ action: "add", id: "p-1", text: "x", options: ["a"] }));
     assert.equal(JSON.parse(fromPage.body).comment.options, undefined);
     assert.equal((await add(agent, { id: "p-1", text: "x", quote: "Goodbye" })).status, 400);
     assert.match(JSON.parse((await add(agent, { id: "p-9", text: "x" })).body).error, /no element with data-id "p-9"/);
 
-    assert.equal((await s.send("POST", "/__inplace/comment", page, JSON.stringify({ action: "edit", n: 1, text: "x" }))).status, 400);
-    const answered = await s.send("POST", "/__inplace/comment", page, JSON.stringify({ action: "answer", n: 1, text: "The reader." }));
+    assert.equal((await s.send("POST", "/__pearwrite/comment", page, JSON.stringify({ action: "edit", n: 1, text: "x" }))).status, 400);
+    const answered = await s.send("POST", "/__pearwrite/comment", page, JSON.stringify({ action: "answer", n: 1, text: "The reader." }));
     assert.equal(answered.status, 200, answered.body);
     assert.equal(JSON.parse(answered.body).comment.answer, "The reader.");
   } finally {
@@ -189,7 +189,7 @@ test("the agent leaves its own comments, which the page can answer but not forge
 test("files next to the document are served, but not hidden ones or ones a link leads outside to", async () => {
   const s = await start();
   const dir = dirname(s.path);
-  const outside = mkdtempSync(join(tmpdir(), "inplace-outside-"));
+  const outside = mkdtempSync(join(tmpdir(), "pearwrite-outside-"));
   try {
     mkdirSync(join(dir, "img"));
     writeFileSync(join(dir, "img", "a.png"), "png");
@@ -218,7 +218,7 @@ test("files next to the document are served, but not hidden ones or ones a link 
 
 /** A one-paragraph document in a new folder. */
 function docFile(): { dir: string; path: string } {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-save-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-save-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Hello</p></body></html>');
   return { dir, path };
@@ -226,7 +226,7 @@ function docFile(): { dir: string; path: string } {
 
 test("saving a document opened through a link changes the file it leads to and keeps the link", () => {
   const { dir, path } = docFile();
-  const link = join(mkdtempSync(join(tmpdir(), "inplace-link-")), "link.html");
+  const link = join(mkdtempSync(join(tmpdir(), "pearwrite-link-")), "link.html");
   symlinkSync(path, link);
   const doc = new Document(link, true, () => {}, dir);
   doc.saveBlock("p-1", "Hello", "Hello there");
@@ -257,7 +257,7 @@ test("saving keeps the document's permissions and its other hard links", () => {
 
 /** A document with two paragraphs, and a way to change the file the way an agent would. */
 function twoParagraphs() {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-cache-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-cache-"));
   const path = join(dir, "doc.html");
   writeFileSync(path, '<html><body><p data-id="p-1">Hello</p>\n<p data-id="p-2">World</p></body></html>');
   const doc = new Document(path, true, () => {}, dir);
@@ -265,7 +265,7 @@ function twoParagraphs() {
   const read = () => readFileSync(path, "utf8");
   // Change the file, then give it back the size and modification time it had, as a quick
   // second write can on a file system that keeps times coarsely. The time is first set to a
-  // whole second, which every file system keeps exactly, and inplace is shown it unchanged.
+  // whole second, which every file system keeps exactly, and Pearwrite is shown it unchanged.
   const agent = (from: string, to: string) => {
     utimesSync(path, 1_700_000_000, 1_700_000_000);
     doc.poll();
@@ -297,7 +297,7 @@ test("a change to the same block between two saves is still a conflict", () => {
   assert.equal(doc.stashCount, 1);
 });
 
-test("each save builds on inplace's own last write", () => {
+test("each save builds on Pearwrite's own last write", () => {
   const { doc, read } = twoParagraphs();
   const version = doc.version;
   doc.saveBlock("p-1", "Hello", "Hello there");
@@ -344,7 +344,7 @@ test("below edit access, every change to the document is refused with 403 and th
       const page = { host, origin: `http://${host}`, "content-type": "application/json" };
       const before = readFileSync(s.path, "utf8");
       for (const [action, body] of EDIT_REQUESTS) {
-        const res = await s.send("POST", `/__inplace/${action}`, page, JSON.stringify(body));
+        const res = await s.send("POST", `/__pearwrite/${action}`, page, JSON.stringify(body));
         assert.equal(res.status, 403, `${action} at ${level}: ${res.body}`);
         assert.match(JSON.parse(res.body).error, /not edit/);
       }
@@ -363,14 +363,14 @@ test("at view access every comment action is refused too, and comment access all
       const host = `localhost:${s.port}`;
       const page = { host, "content-type": "application/json" };
       for (const body of COMMENT_REQUESTS) {
-        const res = await s.send("POST", "/__inplace/comment", page, JSON.stringify(body));
+        const res = await s.send("POST", "/__pearwrite/comment", page, JSON.stringify(body));
         if (s === view) {
           assert.equal(res.status, 403, JSON.stringify(body));
           assert.match(JSON.parse(res.body).error, /comment on it/);
         } else assert.notEqual(res.status, 403, `${JSON.stringify(body)}: ${res.body}`);
       }
     }
-    assert.equal(JSON.parse((await view.send("GET", "/__inplace/comments", { host: `localhost:${view.port}` })).body).comments.length, 0);
+    assert.equal(JSON.parse((await view.send("GET", "/__pearwrite/comments", { host: `localhost:${view.port}` })).body).comments.length, 0);
   } finally {
     view.close();
     comment.close();
@@ -385,8 +385,8 @@ test("with named people, only the one who wrote a comment edits or deletes it, a
   });
   try {
     const call = async (who: string, body: object, extra: Record<string, string> = {}) =>
-      s.send("POST", "/__inplace/comment", { host: `localhost:${s.port}`, "content-type": "application/json", "x-person": who, ...extra }, JSON.stringify(body));
-    const list = async () => JSON.parse((await s.send("GET", "/__inplace/comments", { host: `localhost:${s.port}` })).body).comments;
+      s.send("POST", "/__pearwrite/comment", { host: `localhost:${s.port}`, "content-type": "application/json", "x-person": who, ...extra }, JSON.stringify(body));
+    const list = async () => JSON.parse((await s.send("GET", "/__pearwrite/comments", { host: `localhost:${s.port}` })).body).comments;
     assert.equal((await call("ann", { action: "add", id: "p-1", text: "Ann's note" })).status, 200);
     assert.deepEqual((await list())[0].from, { kind: "person", id: "u1", name: "Ann" });
 
@@ -408,7 +408,7 @@ test("with named people, only the one who wrote a comment edits or deletes it, a
     // The agent's comments can be answered or dismissed by anyone at comment level.
     const asAgent = { host: `localhost:${s.port}`, "content-type": "application/json" };
     for (const text of ["First?", "Second?"]) {
-      await s.send("POST", "/__inplace/comment", asAgent, JSON.stringify({ action: "add", by: "agent", id: "p-1", text }));
+      await s.send("POST", "/__pearwrite/comment", asAgent, JSON.stringify({ action: "add", by: "agent", id: "p-1", text }));
     }
     assert.equal((await call("bo", { action: "answer", n: 3, text: "Yes" })).status, 200);
     assert.equal((await call("ann", { action: "dismiss", n: 4 })).status, 200);
@@ -421,7 +421,7 @@ test("without named people, anyone may edit or delete any comment", async () => 
   const s = await start({ access: () => "comment" });
   try {
     const call = (body: object) =>
-      s.send("POST", "/__inplace/comment", { host: `localhost:${s.port}`, "content-type": "application/json" }, JSON.stringify(body));
+      s.send("POST", "/__pearwrite/comment", { host: `localhost:${s.port}`, "content-type": "application/json" }, JSON.stringify(body));
     await call({ action: "add", id: "p-1", text: "A note" });
     assert.equal((await call({ action: "edit", n: 1, text: "Changed" })).status, 200);
     assert.equal((await call({ action: "delete", n: 1 })).status, 200);
@@ -436,10 +436,10 @@ test("at edit access, and with no access option, nothing is refused", async () =
     try {
       const host = `localhost:${s.port}`;
       const page = { host, origin: `http://${host}`, "content-type": "application/json" };
-      const res = await s.send("POST", "/__inplace/save", page, JSON.stringify({ id: "p-1", old: "Hello", new: "Changed" }));
+      const res = await s.send("POST", "/__pearwrite/save", page, JSON.stringify({ id: "p-1", old: "Hello", new: "Changed" }));
       assert.equal(res.status, 200, res.body);
       assert.match(readFileSync(s.path, "utf8"), />Changed</);
-      const added = await s.send("POST", "/__inplace/comment", page, JSON.stringify({ action: "add", id: "p-1", text: "Why?" }));
+      const added = await s.send("POST", "/__pearwrite/comment", page, JSON.stringify({ action: "add", id: "p-1", text: "Why?" }));
       assert.equal(added.status, 200, added.body);
     } finally {
       s.close();
@@ -452,23 +452,23 @@ test("the agent's changes are listed with the history, and the page can undo or 
   try {
     const host = `localhost:${s.port}`;
     const page = { host, origin: `http://${host}`, "content-type": "application/json" };
-    const history = async () => JSON.parse((await s.send("GET", "/__inplace/history", { host })).body);
-    await history(); // inplace has seen the file
+    const history = async () => JSON.parse((await s.send("GET", "/__pearwrite/history", { host })).body);
+    await history(); // Pearwrite has seen the file
     writeFileSync(s.path, readFileSync(s.path, "utf8").replace("Hello", "Hello there"));
     const { pending } = await history();
     assert.deepEqual(pending.map((p: { kind: string; id: string; before: string; undoable: boolean }) => [p.kind, p.id, p.before, p.undoable]),
       [["changed", "p-1", "Hello", true]]);
-    const undone = await s.send("POST", "/__inplace/suggestion/undo", page, JSON.stringify({ id: "p-1" }));
+    const undone = await s.send("POST", "/__pearwrite/suggestion/undo", page, JSON.stringify({ id: "p-1" }));
     assert.equal(undone.status, 200, undone.body);
     assert.ok(JSON.parse(undone.body).editable.includes("p-1"));
     assert.match(readFileSync(s.path, "utf8"), /<p data-id="p-1">Hello<\/p>/);
     assert.deepEqual((await history()).pending, []);
-    const again = await s.send("POST", "/__inplace/suggestion/undo", page, JSON.stringify({ id: "p-1" }));
+    const again = await s.send("POST", "/__pearwrite/suggestion/undo", page, JSON.stringify({ id: "p-1" }));
     assert.equal(again.status, 409);
     assert.match(JSON.parse(again.body).error, /kept or undone already/);
     writeFileSync(s.path, readFileSync(s.path, "utf8").replace("Hello", "Hi"));
     assert.equal((await history()).pending.length, 1);
-    assert.equal((await s.send("POST", "/__inplace/suggestion/keep-all", page, "{}")).status, 200);
+    assert.equal((await s.send("POST", "/__pearwrite/suggestion/keep-all", page, "{}")).status, 200);
     assert.deepEqual((await history()).pending, []);
     assert.match(readFileSync(s.path, "utf8"), />Hi</);
   } finally {
@@ -480,9 +480,9 @@ test("a copy of the page without the agent's changes can be opened, printed or d
   const s = await start();
   try {
     const host = `localhost:${s.port}`;
-    await s.send("GET", "/__inplace/history", { host }); // inplace has seen the file
+    await s.send("GET", "/__pearwrite/history", { host }); // Pearwrite has seen the file
     writeFileSync(s.path, readFileSync(s.path, "utf8").replace("Hello", "Hello there"));
-    await s.send("GET", "/__inplace/history", { host });
+    await s.send("GET", "/__pearwrite/history", { host });
     const view = await s.send("GET", "/?without-changes", { host });
     assert.equal(view.status, 200);
     assert.match(view.body, /<p data-id="p-1">Hello<\/p>/);
@@ -493,10 +493,10 @@ test("a copy of the page without the agent's changes can be opened, printed or d
     const download = await s.send("GET", "/?without-changes=download", { host });
     assert.match(String(download.headers["content-disposition"]), /^attachment; filename="doc \(before your agent's changes\)\.html"; filename\*=UTF-8''doc%20%28before%20your%20agent%27s%20changes%29\.html$/);
     assert.match(download.body, /<p data-id="p-1">Hello<\/p>/);
-    assert.deepEqual(JSON.parse((await s.send("GET", "/__inplace/without-changes", { host })).body), { left: [] });
+    assert.deepEqual(JSON.parse((await s.send("GET", "/__pearwrite/without-changes", { host })).body), { left: [] });
     // The file still has the agent's change, and it's still to review.
     assert.match(readFileSync(s.path, "utf8"), /Hello there/);
-    assert.equal(JSON.parse((await s.send("GET", "/__inplace/history", { host })).body).pending.length, 1);
+    assert.equal(JSON.parse((await s.send("GET", "/__pearwrite/history", { host })).body).pending.length, 1);
   } finally {
     s.close();
   }
@@ -507,7 +507,7 @@ test("reading stays open at every level, and the access is looked up for each re
   const s = await start({ access: () => level });
   try {
     const host = `localhost:${s.port}`;
-    for (const path of ["/", "/__inplace/history", "/__inplace/comments", "/__inplace/stash"]) {
+    for (const path of ["/", "/__pearwrite/history", "/__pearwrite/comments", "/__pearwrite/stash"]) {
       assert.equal((await s.send("GET", path, { host })).status, 200, path);
     }
     const html = (await s.send("GET", "/", { host })).body;
@@ -528,7 +528,7 @@ test("a path that isn't an action is not found, whatever the access", async () =
   try {
     const host = `localhost:${s.port}`;
     const page = { host, origin: `http://${host}`, "content-type": "application/json" };
-    for (const path of ["/__inplace/constructor", "/__inplace/nothing", "/save"]) {
+    for (const path of ["/__pearwrite/constructor", "/__pearwrite/nothing", "/save"]) {
       assert.equal((await s.send("POST", path, page, "{}")).status, 404, path);
     }
   } finally {

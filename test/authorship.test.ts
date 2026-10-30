@@ -4,7 +4,7 @@ import { type AddressInfo } from "node:net";
 import { test } from "node:test";
 
 import { readAuthor } from "../src/history.js";
-import { createInplaceServer, Document, type Person } from "../src/server.js";
+import { createPearwriteServer, Document, type Person } from "../src/server.js";
 import { MemoryStore } from "../src/store.js";
 
 const PAGE = `<html><body>
@@ -72,7 +72,7 @@ test("the marks survive a restart", () => {
   assert.deepEqual(summary(again)["p-1"], ["person", "Jana", undefined]);
 });
 
-test("a block changed while inplace wasn't running becomes unknown again", () => {
+test("a block changed while Pearwrite wasn't running becomes unknown again", () => {
   const { store, doc, saved } = setup();
   doc.load();
   doc.saveBlock("p-1", "One", "One!", jana);
@@ -82,7 +82,7 @@ test("a block changed while inplace wasn't running becomes unknown again", () =>
   assert.deepEqual(Object.keys(again.authorMarks()), ["p-1"]);
 });
 
-test("a change to the file while inplace runs is the agent's", () => {
+test("a change to the file while Pearwrite runs is the agent's", () => {
   const { store, doc } = setup();
   doc.load();
   store.write(store.read().replace("Three", "Three, rewritten"));
@@ -94,7 +94,7 @@ test("the author option names the person in the marks, the history and the chang
   const { doc, lines } = setup();
   doc.load();
   const people = new Map([["jana", jana], ["petr", petr]]);
-  const server = createInplaceServer(doc, { author: (req) => people.get(String(req.headers["x-user"])) });
+  const server = createPearwriteServer(doc, { author: (req) => people.get(String(req.headers["x-user"])) });
   await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
   const port = (server.address() as AddressInfo).port;
   const call = (path: string, user: string | undefined, body?: object) =>
@@ -109,11 +109,11 @@ test("the author option names the person in the marks, the history and the chang
       req.end(body ? JSON.stringify(body) : undefined);
     });
   t.after(() => server.close());
-  await call("/__inplace/save", "jana", { id: "p-1", old: "One", new: "One by Jana" });
-  await call("/__inplace/save", "petr", { id: "p-2", old: "Two", new: "Two by Petr" });
-  await call("/__inplace/save", undefined, { id: "p-3", old: "Three", new: "Three by me" });
-  await call("/__inplace/comment", "petr", { action: "add", id: "p-1", text: "Check this" });
-  const history = (await call("/__inplace/history", "jana")).json;
+  await call("/__pearwrite/save", "jana", { id: "p-1", old: "One", new: "One by Jana" });
+  await call("/__pearwrite/save", "petr", { id: "p-2", old: "Two", new: "Two by Petr" });
+  await call("/__pearwrite/save", undefined, { id: "p-3", old: "Three", new: "Three by me" });
+  await call("/__pearwrite/comment", "petr", { action: "add", id: "p-1", text: "Check this" });
+  const history = (await call("/__pearwrite/history", "jana")).json;
   assert.deepEqual(history.entries.map((e: any) => e.by), [
     { kind: "person", id: "u-jana", name: "Jana" }, { kind: "person", id: "u-petr", name: "Petr" }, { kind: "person" },
   ]);

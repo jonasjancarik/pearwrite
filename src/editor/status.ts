@@ -1,6 +1,6 @@
 const pill = document.createElement("div");
-pill.id = "inplace-status";
-pill.dataset.inplaceUi = "";
+pill.id = "pearwrite-status";
+pill.dataset.pearwriteUi = "";
 document.body.append(pill);
 let pillTimer: number | undefined;
 // `sticky` keeps the message up; a number keeps it up for that many ms.

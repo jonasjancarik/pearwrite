@@ -13,11 +13,11 @@ interface WordChange {
 }
 const wordChanges = new WeakMap<Element, WordChange>();
 const wordStyle = document.createElement("style");
-wordStyle.dataset.inplaceUi = "";
+wordStyle.dataset.pearwriteUi = "";
 document.head.append(wordStyle);
 const WORD_TINT = [179, 156, 255, 0.42];
 addEventListener("beforeprint", () => {
-  for (const name of [...(window.CSS?.highlights?.keys() ?? [])]) if (name.startsWith("inplace-words-")) CSS.highlights.delete(name);
+  for (const name of [...(window.CSS?.highlights?.keys() ?? [])]) if (name.startsWith("pearwrite-words-")) CSS.highlights.delete(name);
 });
 let wordCount = 0;
 
@@ -68,12 +68,12 @@ function tintWords(el: HTMLElement, before: string, by: "agent" | "you" = "agent
   const changes = changedRanges(el, before);
   if (!changes?.length) return false;
   const ranges = changes.map((c) => c.range);
-  const name = `inplace-words-${++wordCount}`;
+  const name = `pearwrite-words-${++wordCount}`;
   CSS.highlights.set(name, new Highlight(...ranges));
   const sheet = wordStyle.sheet!;
   const rule = sheet.cssRules[sheet.insertRule(`::highlight(${name}){background-color:rgba(${WORD_TINT.join(",")})}`, sheet.cssRules.length)] as CSSStyleRule;
   wordChanges.set(el, { before, ranges, changes, by, name, rule });
-  el.classList.add("inplace-changed-words");
+  el.classList.add("pearwrite-changed-words");
   return true;
 }
 

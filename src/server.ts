@@ -24,7 +24,7 @@ import { CantUndo, PendingChanges, reverseChange, undoAll } from "./pending.js";
 import { type DocumentStore, FileStore } from "./store.js";
 import { type ChangeFeed, newsNote } from "./wait.js";
 
-const EDITOR_PREFIX = "/__inplace/";
+const EDITOR_PREFIX = "/__pearwrite/";
 
 /** The files a document can load from its folder; anything else there isn't served. */
 const MIME: Record<string, string> = {
@@ -149,9 +149,9 @@ export class Document {
   private stashListeners = new Set<() => void>();
   private stashed: StashEntry[] = [];
   private historyListeners = new Set<() => void>();
-  /** What changed while inplace has been running, for the page's change list. */
+  /** What changed while Pearwrite has been running, for the page's change list. */
   readonly history = new History();
-  /** The file as inplace last saw it, with ids, to work out what each change did. */
+  /** The file as Pearwrite last saw it, with ids, to work out what each change did. */
   private last: string | null = null;
   /** The user's recent moves, additions, removals and heading changes, oldest first, so they can be undone. */
   private undos: UndoStep[] = [];
@@ -172,7 +172,7 @@ export class Document {
    * set-aside edits and comments in `stashDir`, so they survive a restart.
    *
    * `log` receives one line per change to the file, for the agent to read. `byUser` is false for
-   * changes inplace makes on its own, such as adding ids. `ids` are the elements the user's change
+   * changes Pearwrite makes on its own, such as adding ids. `ids` are the elements the user's change
    * left in the document, for the marks beside them that show the agent has seen it.
    */
   constructor(
@@ -319,13 +319,13 @@ export class Document {
 
   /**
    * The file as it is now. It's read every time, which is quick even for a large file, so a
-   * change by someone else is never missed; when nothing changed, the text inplace already has
+   * change by someone else is never missed; when nothing changed, the text Pearwrite already has
    * is reused, and with it everything worked out from it (its version, and its parse in htmldoc).
    */
   private refresh(): string {
     let text = this.read();
     this.stamp = this.statStamp();
-    // A change inplace didn't write came from the agent (or another editor).
+    // A change Pearwrite didn't write came from the agent (or another editor).
     // New elements get their ids as soon as the page loads, so compare with
     // ids already in place to see them as added blocks.
     if (this.last === null) this.last = text;
@@ -793,7 +793,7 @@ const REFUSED: Record<Access, string> = {
 const ownsComment = (comment: Comment, who?: Person) => !who || !comment.from?.id || comment.from.id === who.id;
 
 export interface ServerOptions {
-  /** The change lines and pauses, for `/__inplace/wait`. Leave it out when pauses are turned off. */
+  /** The change lines and pauses, for `/__pearwrite/wait`. Leave it out when pauses are turned off. */
   feed?: ChangeFeed;
   /** What is known about the agent, for the line in the page's list of changes. */
   agent?: AgentStatus;
@@ -801,12 +801,12 @@ export interface ServerOptions {
   allowHosts?: readonly string[];
   /**
    * Whether a request's Host header may reach the document, in place of the check for names of
-   * this computer (isLocalHost). For a host that serves inplace under its own domain names.
+   * this computer (isLocalHost). For a host that serves Pearwrite under its own domain names.
    */
   hostAllowed?: (host: string | undefined) => boolean;
   /**
    * Who sent this request from the page, for the margin marks and the change lines. Left out, or
-   * when it returns undefined, the edit is "you", as when one person runs inplace on their own computer.
+   * when it returns undefined, the edit is "you", as when one person runs Pearwrite on their own computer.
    */
   author?: (req: IncomingMessage) => Person | undefined;
   /**
@@ -816,12 +816,12 @@ export interface ServerOptions {
   access?: (req: IncomingMessage) => Access;
 }
 
-export function createInplaceServer(doc: Document, options: ServerOptions = {}): Server {
-  return createServer(createInplaceHandler(doc, options));
+export function createPearwriteServer(doc: Document, options: ServerOptions = {}): Server {
+  return createServer(createPearwriteHandler(doc, options));
 }
 
-/** The request handler createInplaceServer uses, for a host that runs its own HTTP server. */
-export function createInplaceHandler(
+/** The request handler createPearwriteServer uses, for a host that runs its own HTTP server. */
+export function createPearwriteHandler(
   doc: Document, { feed, agent = new AgentStatus(), allowHosts = [], hostAllowed, access, author }: ServerOptions = {},
 ): (req: IncomingMessage, res: ServerResponse) => void {
   const hostOk = hostAllowed ?? ((host: string | undefined) => isLocalHost(host, allowHosts));
@@ -854,7 +854,7 @@ export function createInplaceHandler(
       });
     }
     if (mode === "print") {
-      const tag = `<script data-inplace-print>addEventListener("load", () => { addEventListener("afterprint", () => close()); print(); });</script>`;
+      const tag = `<script data-pearwrite-print>addEventListener("load", () => { addEventListener("afterprint", () => close()); print(); });</script>`;
       const at = text.toLowerCase().lastIndexOf("</body>");
       text = at === -1 ? text + tag : text.slice(0, at) + tag + text.slice(at);
     }
@@ -870,7 +870,7 @@ export function createInplaceHandler(
     const editing = level === "edit";
     const hashes = blockHashes(text);
     const tag =
-      `<script src="${EDITOR_PREFIX}editor.js" data-inplace data-version="${version}" ` +
+      `<script src="${EDITOR_PREFIX}editor.js" data-pearwrite data-version="${version}" ` +
       `data-file="${escapeAttr(doc.store.name)}" data-build="${escapeAttr(JSON.stringify(build))}" data-access="${level}" ` +
       `data-editable="${escapeAttr(editing ? editableIds(text).join(" ") : "")}" ` +
       `data-movable="${escapeAttr(editing ? movableIds(text).join(" ") : "")}"${hashes ? ` data-hashes="${escapeAttr(JSON.stringify(hashes))}"` : ""}></script>`;
@@ -1024,7 +1024,7 @@ export function createInplaceHandler(
     }
   };
 
-  // `inplace wait`: hold the request open until the user pauses, then answer with the change lines
+  // `pearwrite wait`: hold the request open until the user pauses, then answer with the change lines
   // since `after`. A space every 30 seconds shows the connection is alive (JSON allows it before the value).
   const wait = (req: IncomingMessage, res: ServerResponse, query: URLSearchParams) => {
     // Only for agents: a web page could otherwise hold waits open and use up pauses.
@@ -1048,7 +1048,7 @@ export function createInplaceHandler(
     });
   };
 
-  // What the agent should hear about mid-task (`inplace pending`). With for=codex-hook, the answer
+  // What the agent should hear about mid-task (`pearwrite pending`). With for=codex-hook, the answer
   // is a Codex PostToolUse hook's output, or nothing at all, so a hook can be a single curl.
   const news = (req: IncomingMessage, res: ServerResponse, query: URLSearchParams) => {
     if (req.headers.origin || req.headers["sec-fetch-site"]) return json(res, 403, { error: "not for browsers" });

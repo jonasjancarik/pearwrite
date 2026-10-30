@@ -11,7 +11,7 @@ import { pauseEvent } from "../src/mcp.js";
 
 const CLI = resolve(import.meta.dirname, "..", "src", "cli.js");
 
-/** `inplace mcp` as a child process, spoken to the way Claude Code does: one JSON-RPC message per line. */
+/** `pearwrite mcp` as a child process, spoken to the way Claude Code does: one JSON-RPC message per line. */
 function startServer(args: string[]) {
   const proc = spawn(process.execPath, [CLI, "mcp", ...args], { stdio: ["pipe", "pipe", "pipe"] });
   const received: Record<string, any>[] = [];
@@ -52,10 +52,10 @@ function startServer(args: string[]) {
 }
 
 const post = (url: string, action: string, body: Record<string, unknown>) =>
-  fetch(new URL(`/__inplace/${action}`, url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
+  fetch(new URL(`/__pearwrite/${action}`, url), { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then((r) => r.json());
 
 test("serves a document through MCP tools and sends one channel event per pause", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-mcp-"));
   const path = join(dir, "report.html");
   writeFileSync(path, "<!doctype html><title>Report</title><body><p>Ten trees</p><p>Two benches</p></body>");
   const server = startServer(["--pause", "0.3", "--log", join(dir, "changes.log")]);
@@ -77,7 +77,7 @@ test("serves a document through MCP tools and sends one channel event per pause"
 
     const opened = await server.tool("open_document", { path, port: 0, host: "127.0.0.1" });
     assert.ok(!opened.isError, opened.text);
-    assert.match(opened.text, /# Working on a document with inplace/, "the first open carries the agent guide");
+    assert.match(opened.text, /# Working on a document with Pearwrite/, "the first open carries the agent guide");
     assert.doesNotMatch(opened.text, /## Troubleshooting/, "without the parts few sessions need");
     assert.match(opened.text, /- troubleshooting: /, "which it names");
     assert.match((await server.tool("guide", { topic: "troubleshooting" })).text, /^## Troubleshooting\n/);
@@ -116,7 +116,7 @@ test("serves a document through MCP tools and sends one channel event per pause"
 });
 
 test("wait_for_edits returns at the next pause and doesn't repeat what get_edits returned", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-mcp-"));
   const path = join(dir, "report.html");
   writeFileSync(path, "<!doctype html><body><p>Ten trees</p></body>");
   const server = startServer(["--pause", "0.3"]);
@@ -146,7 +146,7 @@ test("wait_for_edits returns at the next pause and doesn't repeat what get_edits
 });
 
 test("get_comments lists the page's comments and resolve_comment marks them done", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-mcp-"));
   const path = join(dir, "report.html");
   writeFileSync(path, "<!doctype html><body><p>Ten trees</p></body>");
   const server = startServer(["--pause", "0.3"]);
@@ -193,7 +193,7 @@ test("get_comments lists the page's comments and resolve_comment marks them done
 });
 
 test("edits the document through tools, refusing stale edits and keeping ids", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-mcp-"));
   const path = join(dir, "report.html");
   writeFileSync(path, "<!doctype html><body><h1>Budget</h1><p>Ten trees cost €100.</p>" +
     "<table><tr><td>Trees</td><td>€100</td></tr></table></body>");
@@ -239,7 +239,7 @@ test("edits the document through tools, refusing stale edits and keeping ids", a
 });
 
 test("answers MCP over HTTP only at the secret URL", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "inplace-mcp-"));
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-mcp-"));
   const path = join(dir, "report.html");
   writeFileSync(path, "<!doctype html><body><p>Ten trees</p></body>");
   const proc = spawn(process.execPath, [CLI, "mcp", "--http", "--port", "0", "--token", "s3cret"], { stdio: ["ignore", "pipe", "pipe"] });
@@ -260,7 +260,7 @@ test("answers MCP over HTTP only at the secret URL", async () => {
       (await rpc(base, { jsonrpc: "2.0", id, method, params })).json();
 
     const init = await call(1, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "t", version: "0" } });
-    assert.equal(init.result.serverInfo.name, "inplace");
+    assert.equal(init.result.serverInfo.name, "pearwrite");
     assert.equal((await rpc(base, { jsonrpc: "2.0", method: "notifications/initialized" })).status, 202);
     const opened = await call(2, "tools/call", { name: "open_document", arguments: { path, port: 0, host: "127.0.0.1" } });
     assert.match(opened.result.content[0].text, /Serving/);
@@ -281,7 +281,7 @@ test("answers MCP over HTTP only at the secret URL", async () => {
 
 test("prints the agent guide", () => {
   const out = execFileSync(process.execPath, [CLI, "guide"], { encoding: "utf8" });
-  assert.match(out, /^# Working on a document with inplace/);
+  assert.match(out, /^# Working on a document with Pearwrite/);
   assert.match(out, /## Comments made on the page/);
   assert.doesNotMatch(out, /## Sharing on the network/, "the parts few sessions need are left out");
   assert.match(out, /## More when you need it/);

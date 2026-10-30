@@ -2,18 +2,18 @@
 // One button in the corner opens the list of changes. While edits are set
 // aside it says so instead, since those need the user's attention.
 const corner = document.createElement("button");
-corner.id = "inplace-corner";
-corner.dataset.inplaceUi = "";
+corner.id = "pearwrite-corner";
+corner.dataset.pearwriteUi = "";
 corner.type = "button";
 const overlay = document.createElement("div");
-overlay.id = "inplace-stash";
-overlay.dataset.inplaceUi = "";
+overlay.id = "pearwrite-stash";
+overlay.dataset.pearwriteUi = "";
 overlay.setAttribute("role", "dialog");
 overlay.setAttribute("aria-modal", "true");
 overlay.setAttribute("aria-label", "Set-aside edits");
 const changesPanel = document.createElement("div");
-changesPanel.id = "inplace-changes";
-changesPanel.dataset.inplaceUi = "";
+changesPanel.id = "pearwrite-changes";
+changesPanel.dataset.pearwriteUi = "";
 changesPanel.setAttribute("role", "dialog");
 changesPanel.setAttribute("aria-label", "Changes");
 document.body.append(corner, overlay, changesPanel);
@@ -35,7 +35,7 @@ const textOf = (html: string) =>
 async function renderStash() {
   let entries: StashEntry[];
   try {
-    entries = (await (await fetch("/__inplace/stash")).json()).entries;
+    entries = (await (await fetch("/__pearwrite/stash")).json()).entries;
   } catch {
     return showStatus("Couldn't reach the editor server.", "error", true);
   }
@@ -56,7 +56,7 @@ async function renderStash() {
         closeStash();
         const target = document.querySelector(`[data-id="${CSS.escape(entry.id)}"]`);
         target?.scrollIntoView({ block: "center" });
-        target?.classList.add("inplace-conflict");
+        target?.classList.add("pearwrite-conflict");
       } }));
     }
     actions.append(

@@ -1,6 +1,6 @@
-// The MCP tools for a host that serves documents itself, such as inplace cloud: one handler per
+// The MCP tools for a host that serves documents itself, such as pearwrite-webapp: one handler per
 // document, mounted on the host's own HTTP server behind its own sign-in. The same tools as
-// `inplace mcp`, without opening and closing, since the document is already there.
+// `pearwrite mcp`, without opening and closing, since the document is already there.
 
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -11,21 +11,21 @@ import type { AgentName } from "./server.js";
 import { type McpBackend, mcpHandler, type Message, parseError, type ToolDefinition } from "./mcp-rpc.js";
 import { DOCUMENT_INFO_TOOL, DOCUMENT_TOOLS, DocumentTools, GUIDE_TOOL, type McpDocument, str } from "./mcp-tools.js";
 
-/** A tool the host adds next to inplace's, such as one that reads the project's uploaded files. */
+/** A tool the host adds next to Pearwrite's, such as one that reads the project's uploaded files. */
 export interface HostTool extends ToolDefinition {
   /** Returns the text for the agent, or throws an error whose message the agent reads. */
   run(args: Record<string, unknown>, context: { client: string; gone?: AbortSignal }): string | Promise<string>;
 }
 
 export interface McpHandlerOptions {
-  /** What the agent is told when it connects, in place of inplace's own. */
+  /** What the agent is told when it connects, in place of Pearwrite's own. */
   instructions?: string;
   /**
-   * The guide to working on the document, returned with a client's first tool call (default: inplace's agent guide, with
+   * The guide to working on the document, returned with a client's first tool call (default: Pearwrite's agent guide, with
    * the guide tool to read its parts; false: none).
    */
   guide?: string | false;
-  /** The names of inplace's tools to offer (default: all), such as a read-only link's `read_document`, `get_comments` and `get_edits`. */
+  /** The names of Pearwrite's tools to offer (default: all), such as a read-only link's `read_document`, `get_comments` and `get_edits`. */
   tools?: string[];
   /** Tools of the host's own. */
   extraTools?: HostTool[];
@@ -63,7 +63,7 @@ export function createMcpHandler(
   const extra = new Map((options.extraTools ?? []).map((t) => [t.name, t]));
   for (const name of extra.keys()) {
     if (own.some((t) => t.name === name) || ["open_document", "close_document", "guide"].includes(name)) {
-      throw new Error(`extraTools: ${name} is already a tool of inplace's`);
+      throw new Error(`extraTools: ${name} is already a tool of Pearwrite's`);
     }
   }
   const wanted = options.tools && new Set(options.tools);
