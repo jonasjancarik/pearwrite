@@ -49,7 +49,8 @@ export interface BlockChange {
   after?: string;
   place?: Place; // where a removed or moved block was before the change
   // For a changed block whose words stayed the same: the words whose formatting changed (bold,
-  // italics, a link…), or sameLook when only the markup behind it changed and it looks the same.
+  // italics, a link…), or sameLook when only the markup behind it changed and it looks the same
+  // (History leaves those out).
   restyled?: string;
   sameLook?: true;
   // Fingerprints of the block's markup and of how it looks, before and after, so that formatting
@@ -357,8 +358,9 @@ function fold(prev: BlockChange, next: BlockChange): boolean {
   if (!marks) return !!prev.fromTag; // without fingerprints, words back as they were count as undone
   prev.marks = marks;
   if (marks.from === marks.to) return !!prev.fromTag;
-  if (marks.fromLook === marks.toLook) prev.sameLook = true;
-  else if (restyled) prev.restyled = restyled;
+  // Looking the same as before the first of them is nothing to show either.
+  if (marks.fromLook === marks.toLook) return !!prev.fromTag;
+  if (restyled) prev.restyled = restyled;
   return true;
 }
 
@@ -377,9 +379,13 @@ export class History {
 
   /** Returns true if the list changed. */
   add(by: Author, changes: BlockChange[], now = new Date()): boolean {
-    if (!changes.length) return false;
     const last = this.entries.at(-1);
-    if (last && sameAuthor(last.by, by) && now.getTime() - Date.parse(last.at) < this.windowMs) {
+    const joins = !!last && sameAuthor(last.by, by) && now.getTime() - Date.parse(last.at) < this.windowMs;
+    // A change nobody can see (tidier markup, the same look) isn't worth a line, unless it's
+    // folded into an earlier change to the same block, whose fingerprints it carries on.
+    changes = changes.filter((c) => !c.sameLook || (joins && last!.changes.some((p) => p.id === c.id)));
+    if (!changes.length) return false;
+    if (joins && last) {
       for (const change of changes) {
         const i = last.changes.findIndex((c) => c.id === change.id);
         if (i === -1) last.changes.push({ ...change });

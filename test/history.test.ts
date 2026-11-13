@@ -129,3 +129,16 @@ test("formatting changes that undo each other leave nothing, and tidying after a
   history.add(AGENT, diffBlocks(p("Ten <b>tr</b><b>ees</b>"), p("Ten <b>trees</b>")));
   assert.deepEqual(history.entries[0].changes.map((c) => [c.restyled, c.sameLook]), [["trees", undefined]]);
 });
+
+test("a change nobody can see is left out of the list of changes", () => {
+  const p = (inner: string) => `<body><p data-id="p-1">${inner}</p><p data-id="p-2">Two</p></body>`;
+  const history = new History();
+  assert.equal(history.add(YOU, diffBlocks(p("<b>Ten</b><b> trees</b>"), p("<b>Ten trees</b>"))), false);
+  history.add(AGENT, diffBlocks(p("<b>Ten trees</b>"), p("<b>Ten</b><b> trees</b>").replace(">Two<", ">Three<")));
+  assert.deepEqual(history.entries[0].changes.map((c) => c.id), ["p-2"]);
+  // Bold that's later put back the way it was, in different markup, leaves nothing either.
+  const later = new History();
+  later.add(YOU, diffBlocks(p("Ten trees"), p("Ten <b>trees</b>")));
+  later.add(YOU, diffBlocks(p("Ten <b>trees</b>"), p("Ten <span>trees</span>")));
+  assert.equal(later.entries.length, 0);
+});

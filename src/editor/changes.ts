@@ -64,7 +64,6 @@ function describe(change: BlockChange) {
   if (change.kind === "moved") return `Moved ${noun(change.tag)}`;
   if (change.fromTag && noun(change.fromTag) !== noun(change.tag)) return `${capital(noun(change.fromTag))} \u2192 ${noun(change.tag)}`;
   if (change.restyled) return `Reformatted ${noun(change.tag)}`;
-  if (change.sameLook) return `Tidied ${noun(change.tag)}`;
   return `Edited ${noun(change.tag)}`;
 }
 
@@ -75,7 +74,6 @@ function snippet(change: BlockChange) {
   if (change.kind === "added") return [make("ins", { textContent: clipText(after) })];
   if (change.kind === "removed") return [make("del", { textContent: clipText(before) })];
   if (change.restyled) return [`Formatting of \u201c${change.restyled}\u201d`];
-  if (change.sameLook) return [`No visible change: ${clipText(after)}`];
   if (change.kind === "moved" || before === after) return [clipText(after)];
   const CONTEXT = 8; // words and the spaces between them
   const runs = diffWords(before, after);

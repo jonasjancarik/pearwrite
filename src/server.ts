@@ -222,8 +222,12 @@ export class Document {
   private remember(text: string, by: Author, reason?: string): void {
     if (this.last !== null && this.last !== text) {
       const changes = diffBlocks(this.last, text);
-      if (this.authors.record(changes, by, text)) this.saveAuthors();
-      if (this.pending.record(changes, by, this.last, text, undefined, reason)) this.savePending(false);
+      // A block that only got tidier markup keeps its author, and isn't a change to review unless
+      // it's already one (so undoing it starts from the tidied markup).
+      const seen = changes.filter((c) => !c.sameLook);
+      if (this.authors.record(seen, by, text) || (seen.length < changes.length && this.authors.refit(text))) this.saveAuthors();
+      const toReview = changes.filter((c) => !c.sameLook || this.pending.get(c.id));
+      if (this.pending.record(toReview, by, this.last, text, undefined, reason)) this.savePending(false);
       if (this.history.add(by, changes)) for (const listener of this.historyListeners) listener();
     }
     this.last = text;
