@@ -300,14 +300,54 @@ function commentView(c: PageComment, { inList = false }: { inList?: boolean } = 
   node.append(text);
   const answer = c.answer ? make("p", { className: "text", textContent: `You: ${c.answer}` }) : null;
   if (answer) node.append(answer);
+  for (const r of c.replies ?? []) {
+    node.append(make("p", r.by === "agent" ? { className: "reply", textContent: `Your agent: ${r.text}` }
+      : { className: "text", textContent: `You: ${r.text}` }));
+  }
   if (c.reply) node.append(make("p", { className: "reply", textContent: `Your agent: ${c.reply}` }));
+  const lastReply = c.replies?.at(-1);
+  const waiting = lastReply ? lastReply.by === "agent" : !!c.by && !c.answer;
   const state = c.dismissed ? "Dismissed" : c.status === "done" ? "Done"
-    : c.by && !c.answer ? "Waiting for your answer" : "Not done yet";
+    : waiting ? "Waiting for your answer" : "Not done yet";
   const meta = make("div", { className: "meta" }, make("span", { textContent: `${state} · ${ago(c.created)}` }));
   const where = `${inList ? "list" : "box"}:`;
   let resume: (() => void) | null = null;
+  // Once the agent has replied, the user answers below its reply rather than changing the comment.
+  const writeReply = () => {
+    const field = commentField("", () => save(), "Reply", "Your reply");
+    field.dataset.writing = `${where}reply:${c.n}`;
+    const save = () => {
+      if (!field.value.trim()) return;
+      delete field.dataset.writing;
+      if (!inList) closeBox();
+      changeComment({ action: "reply", n: c.n, text: field.value }, "Reply sent");
+    };
+    const shownMeta = [...meta.childNodes];
+    meta.before(field);
+    field.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && inList) { e.stopPropagation(); field.remove(); meta.replaceChildren(...shownMeta); }
+    });
+    meta.replaceChildren(make("button", { type: "button", textContent: "Send", onclick: save }));
+    field.focus();
+    return field;
+  };
+  const canReply = c.status === "open" && !!c.replies?.length && !(meId && !c.by && c.from?.id && c.from.id !== meId);
   if (!canComment) {
     // Read-only: the comment and its state, nothing to change.
+  } else if (canReply) {
+    resume = () => resumeWriting(`${where}reply:${c.n}`, writeReply);
+    meta.append(make("button", { type: "button", textContent: "Reply", onclick: writeReply }));
+    if (c.by) {
+      meta.append(make("button", { type: "button", textContent: "Dismiss", onclick: () => {
+        if (!inList) closeBox();
+        changeComment({ action: "dismiss", n: c.n }, "Comment dismissed");
+      } }));
+    } else {
+      meta.append(make("button", { type: "button", textContent: "Delete", onclick: () => {
+        if (!inList) closeBox();
+        changeComment({ action: "delete", n: c.n }, "Comment deleted");
+      } }));
+    }
   } else if (c.status === "open" && c.by) {
     const sendAnswer = (value: string) => {
       if (!inList) closeBox();

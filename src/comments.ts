@@ -49,10 +49,24 @@ export interface Comment {
   created: string; // ISO time
   resolved?: string;
   reply?: string; // the agent's note to the user when it resolved the comment
+  replies?: Reply[]; // the conversation under an open comment, oldest first
   tag?: CommentTag; // what kind of request the user's comment is, when a tagger is set and was sure
 }
 
-/** Whether a change line is about a comment (left, edited, answered, deleted, dismissed or marked done). */
+/** A reply under a comment, from the agent or the user; it keeps the comment open. */
+export interface Reply {
+  by: "agent" | "user";
+  text: string;
+  created: string; // ISO time
+}
+
+/** Whether the comment waits for the user: the agent's last word was a question or reply to them. */
+export const waitsForUser = (c: Comment) => {
+  const last = c.replies?.at(-1);
+  return last ? last.by === "agent" : !!c.by && c.answer === undefined;
+};
+
+/** Whether a change line is about a comment (left, edited, answered, replied to, deleted, dismissed or marked done). */
 export const isCommentLine = (line: string) => /^\S+ comment #\d+ /.test(line);
 
 /** The kinds of request a user's comment can be tagged with, for the agent to plan its work by. */
@@ -128,11 +142,11 @@ export class CommentStore {
   stillOpen(command: string): string | undefined {
     const open = this.list(false);
     // The user's comments, and the agent's that the user has answered, wait for the agent.
-    const todo = open.filter((c) => !c.by || c.answer !== undefined);
-    const asked = open.filter((c) => c.by && c.answer === undefined);
+    const todo = open.filter((c) => !waitsForUser(c));
+    const asked = open.filter(waitsForUser);
     const lines: string[] = [];
     if (todo.length) {
-      const which = todo.map((c) => `#${c.n} on ${c.id}${c.by ? " (your comment, answered by the user)" : ""}`).join(", ");
+      const which = todo.map((c) => `#${c.n} on ${c.id}${c.by ? " (your comment, answered by the user)" : c.replies?.length ? " (the user replied)" : ""}`).join(", ");
       lines.push(`${todo.length === 1 ? "1 comment from before is" : `${todo.length} comments from before are`} still open: ` +
         `${which}. Read ${todo.length === 1 ? "it" : "them"} in full with ${command} and deal with ${todo.length === 1 ? "it" : "them"} as usual.`);
     }
@@ -234,6 +248,21 @@ export class CommentStore {
     comment.answer = text.trim();
     this.save();
     this.log(`${time()} comment #${n} answered by the user: ${quoted(comment.answer, TEXT_MAX)}`, true);
+    return comment;
+  }
+
+  /**
+   * A reply under an open comment that keeps it open: the agent answering a question or asking
+   * one back, or the user answering the agent's reply. The user replies only under their own
+   * comments and under the agent's (where they could answer anyway).
+   */
+  reply(n: number, text: string, by: "agent" | "user"): Comment {
+    const comment = this.get(n);
+    if (comment.status !== "open") throw new NotTheirs(`comment #${n} is already done`);
+    if (!text.trim()) throw new EmptyComment();
+    (comment.replies ??= []).push({ by, text: text.trim(), created: new Date().toISOString() });
+    this.save();
+    this.log(`${time()} comment #${n} reply from the ${by}: ${quoted(text.trim(), TEXT_MAX)}`, by === "user");
     return comment;
   }
 

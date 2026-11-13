@@ -39,6 +39,30 @@ test("adds, edits, resolves and deletes comments, with one change line each", ()
   assert.equal(store.list()[0].reply, "Added: two beds per floor, chosen by lot.");
 });
 
+test("a reply keeps the comment open, and the user can answer it", () => {
+  const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
+  const lines: [string, boolean][] = [];
+  const store = new CommentStore(join(dir, "comments.json"), (line, byUser) => lines.push([strip(line), byUser]));
+  store.add({ id: "p-1", text: "Is this British English?" });
+  store.reply(1, " Yes; keep “learned”? ", "agent");
+  assert.equal(store.get(1).status, "open");
+  assert.match(store.stillOpen("pearwrite comments")!, /1 comment of yours is still waiting for the user: #1 on p-1/);
+  store.reply(1, "Use learnt.", "user");
+  assert.match(store.stillOpen("pearwrite comments")!, /#1 on p-1 \(the user replied\)/);
+  store.resolve(1);
+  assert.throws(() => store.reply(1, "Too late", "agent"), NotTheirs);
+  assert.throws(() => store.reply(9, "Nobody", "agent"), CommentNotFound);
+
+  assert.deepEqual(store.get(1).replies?.map((r) => [r.by, r.text]), [["agent", "Yes; keep “learned”?"], ["user", "Use learnt."]]);
+  assert.deepEqual(lines.slice(1), [
+    ['comment #1 reply from the agent: "Yes; keep “learned”?"', false],
+    ['comment #1 reply from the user: "Use learnt."', true],
+    ["comment #1 marked done by the agent", false],
+  ]);
+  // Kept beside the document like the rest of the comment.
+  assert.equal(new CommentStore(join(dir, "comments.json")).get(1).replies?.length, 2);
+});
+
 test("long comments are clipped in the change line but kept whole", () => {
   const dir = mkdtempSync(join(tmpdir(), "pearwrite-comments-"));
   const lines: string[] = [];

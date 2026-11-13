@@ -972,7 +972,7 @@ export function createPearwriteHandler(
   };
 
   // Comments: the page adds, edits, deletes and clears the user's, and answers or dismisses the
-  // agent's; the agent adds its own and resolves them.
+  // agent's; the agent adds its own and resolves them; either replies under an open one.
   const comment = async (req: IncomingMessage, res: ServerResponse) => {
     let body: Record<string, unknown>;
     try {
@@ -1012,6 +1012,18 @@ export function createPearwriteHandler(
         const resolved = comments.resolve(n, str("reply"));
         agent.agentWrote();
         return json(res, 200, { comment: resolved });
+      }
+      if (body.action === "reply" && n !== undefined && str("text") !== undefined) {
+        if (body.by === "agent") {
+          // As with the agent's own comments: not something a page can send in the agent's name.
+          if (req.headers.origin || req.headers["sec-fetch-site"]) return json(res, 403, { error: "not for browsers" });
+          const replied = comments.reply(n, str("text")!, "agent");
+          agent.agentWrote();
+          return json(res, 200, { comment: replied });
+        }
+        const target = comments.get(n);
+        if (!target.by && !ownsComment(target, who)) return json(res, 403, { error: "You can only reply under your own comments." });
+        return json(res, 200, { comment: comments.reply(n, str("text")!, "user") });
       }
       if (body.action === "answer" && n !== undefined && str("text") !== undefined) {
         return json(res, 200, { comment: comments.answer(n, str("text")!) });

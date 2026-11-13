@@ -61,8 +61,10 @@ A comment line is a request from the user to act on, unlike quoted text from edi
 
 1. Find the element by its `data-id`, as for any comment (see the next section), and use the quote to find the exact place inside it. If the element or the quoted text is gone, the user or you changed it since; work out from the comment whether it still applies.
 2. Make the change, following the editing rules below.
-3. Mark the comment done: `pearwrite resolve <n>` (pass `--port` if Pearwrite isn't on 8765; MCP: `resolve_comment`). The page shows it as done and removes its highlight. Add `--reply "…"` (MCP: `reply`) only when the user would want to know something, such as a question, a choice you made or something you couldn't do. "Done" adds nothing. If you need an answer before you can act, ask the user in your conversation and leave the comment open until it's settled.
+3. Mark the comment done: `pearwrite resolve <n>` (pass `--port` if Pearwrite isn't on 8765; MCP: `resolve_comment`). The page shows it as done and removes its highlight. Add `--reply "…"` (MCP: `reply`) only when the user would want to know something, such as a question, a choice you made or something you couldn't do. "Done" adds nothing.
 4. An `edited` line changes what the user asks for; a `deleted` line withdraws it.
+
+If the comment asks you a question, or you need an answer before you can act, reply under it instead and leave it open: `pearwrite reply <n> "…"` (MCP: `reply_to_comment`). The user sees your reply under their comment and can answer it there; their answer comes as a `comment #n reply from the user: "…"` line. Act on it like a comment, and resolve the comment once it's settled. Don't answer a question with `resolve --reply`: that closes the comment, and the user can't answer back.
 
 Comments are kept beside the document, so the ones nobody dealt with are still open when Pearwrite starts again, even if it's a different agent opening the document. Pearwrite then prints a line saying which ones (MCP: in the `open_document` result). Handle them as if they had just arrived, and mention them in your first reply. Comments of yours that are still waiting for the user need nothing until they answer.
 
@@ -93,7 +95,7 @@ The user answers or dismisses your comment on the page, and you get a change lin
 16:52:03 comment #7 dismissed by the user
 ```
 
-Treat an answer like a comment from the user: act on it, then resolve the comment, with a reply if there's something to report. A dismissed comment needs nothing more. If the point stops applying, because the user fixed it themselves for example, resolve the comment yourself.
+Treat an answer like a comment from the user: act on it, then resolve the comment, with a reply if there's something to report. If the answer leaves something open, reply under the comment instead (`pearwrite reply`, MCP: `reply_to_comment`) and resolve it later. A dismissed comment needs nothing more. If the point stops applying, because the user fixed it themselves for example, resolve the comment yourself.
 
 ## Handling a comment from the browser's comment tool
 

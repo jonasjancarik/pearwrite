@@ -48,7 +48,7 @@ test("serves a document's tools without opening or closing, and the guide once o
 
     const { result } = await agent.rpc("tools/list");
     assert.deepEqual(result.tools.map((t: { name: string }) => t.name),
-      ["get_edits", "wait_for_edits", "read_document", "replace_element", "find_replace", "get_comments", "resolve_comment", "add_comment", "document_info", "guide"]);
+      ["get_edits", "wait_for_edits", "read_document", "replace_element", "find_replace", "get_comments", "reply_to_comment", "resolve_comment", "add_comment", "document_info", "guide"]);
 
     const info = await agent.tool("document_info");
     assert.match(info.text, /Document: report\.html\nOpen it at: https:\/\/docs\.example\.com\/d\/1/);

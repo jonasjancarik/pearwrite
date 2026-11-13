@@ -66,6 +66,7 @@ interface PageComment {
   created: string;
   resolved?: string;
   reply?: string;
+  replies?: { by: "agent" | "user"; text: string; created: string }[];
 }
 
 /** An edit set aside, with what the block holds now (null once it's gone). */

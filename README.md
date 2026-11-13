@@ -106,7 +106,7 @@ For a change you'd rather leave to the agent, select the text it's about and cli
 
 The commented text gets a yellow highlight and the element a small numbered marker; click either to read, edit or delete the comment. The list of changes behind the corner button shows all comments at the top, with whether the agent has dealt with them yet. When it has, the comment is marked done, its highlight goes away, and any note the agent left is shown under it. Done comments stay in the list until you clear them. If the agent or you change the text a comment was about, the comment stays and says so.
 
-Comments are kept outside your document, in Pearwrite's own folder (`~/Library/Application Support/pearwrite` on macOS, `~/.local/state/pearwrite` on Linux, `%LOCALAPPDATA%\pearwrite` on Windows, or `$PEARWRITE_STATE_DIR`), so they survive a restart of Pearwrite and never end up in the HTML. They stay with the document when you move or rename it, and a copy of the document starts with a copy of them. Comments on a document nobody has opened for 90 days are deleted. When Pearwrite starts on a document that still has open comments, it tells the agent, so they're picked up even by a different agent than the one you left them for. They reach the agent the same way your edits do (see below), and it marks them done with `pearwrite resolve` or the `resolve_comment` tool.
+Comments are kept outside your document, in Pearwrite's own folder (`~/Library/Application Support/pearwrite` on macOS, `~/.local/state/pearwrite` on Linux, `%LOCALAPPDATA%\pearwrite` on Windows, or `$PEARWRITE_STATE_DIR`), so they survive a restart of Pearwrite and never end up in the HTML. They stay with the document when you move or rename it, and a copy of the document starts with a copy of them. Comments on a document nobody has opened for 90 days are deleted. When Pearwrite starts on a document that still has open comments, it tells the agent, so they're picked up even by a different agent than the one you left them for. They reach the agent the same way your edits do (see below), and it marks them done with `pearwrite resolve` or the `resolve_comment` tool. When your comment asks it something, or it needs to ask you something first, it replies under the comment instead and leaves it open; you can answer under its reply.
 
 The agent can comment too. When it notices something that's for you to decide, such as a figure that doesn't match the project's data or a claim its sources don't back up, it leaves a comment instead of changing your text. Its comments have a blue highlight and marker, and a short notice tells you when one arrives. When it asks a question, it can suggest a few answers that you pick with one click, or you can write your own. Answer one to tell the agent what to do, or dismiss it if nothing needs to change; either way the agent finds out.
 
@@ -216,7 +216,7 @@ The hook needs `curl`, which comes with macOS, Linux and Windows 10 and later. W
 
 ### Running Pearwrite as an MCP server for Claude Code
 
-`pearwrite mcp` runs Pearwrite as a local MCP server. Claude Code starts it and gets its tools: `open_document` serves a file and returns its URL, `get_edits` returns the change lines since the last call, `wait_for_edits` waits for your next pause and returns them then, `get_comments` and `resolve_comment` list your comments and mark them done, `add_comment` leaves a comment of the agent's own, `guide` reads a part of the agent guide, and `close_document` stops serving it. For agents that can't edit files themselves, `read_document`, `replace_element` and `find_replace` read and change the document. One server handles one document at a time.
+`pearwrite mcp` runs Pearwrite as a local MCP server. Claude Code starts it and gets its tools: `open_document` serves a file and returns its URL, `get_edits` returns the change lines since the last call, `wait_for_edits` waits for your next pause and returns them then, `get_comments` and `resolve_comment` list your comments and mark them done, `reply_to_comment` replies under one and keeps it open, `add_comment` leaves a comment of the agent's own, `guide` reads a part of the agent guide, and `close_document` stops serving it. For agents that can't edit files themselves, `read_document`, `replace_element` and `find_replace` read and change the document. One server handles one document at a time.
 
 The server is also a Claude Code [channel](https://code.claude.com/docs/en/channels): each time you pause, it sends the session one message with that burst of changes, and Claude reacts even if it's sitting idle, without having to start a wait again after each pause. The page can't tell when Claude is done with a pause this way, so beside your edits it shows only the eye, not the check.
 
@@ -253,6 +253,7 @@ pearwrite <file.html> [--port 8765] [--host 127.0.0.1] [--allow-host <name>] [--
 pearwrite wait [--port 8765] [--timeout <seconds>] [--after <n>]
 pearwrite pending [--port 8765]
 pearwrite comments [--port 8765] [--all]
+pearwrite reply <n> <text> [--port 8765]
 pearwrite resolve <n> [--reply <text>] [--port 8765]
 pearwrite comment <data-id> <text> [--quote <text>] [--option <answer>]... [--port 8765]
 pearwrite guide [<topic> | all]
@@ -268,7 +269,7 @@ pearwrite mcp --http [--port 8766] [--host 127.0.0.1] [--token <secret>] [--allo
 | `--host` | `127.0.0.1` | Address to listen on. By default only this computer can open the page. Use `0.0.0.0` to open it on other devices on your network, such as a tablet, or to edit it with people on the same Wi-Fi; or just ask your agent to share it on your network. There's no login, so anyone on that network with the address can edit the document. |
 | `--allow-host` | none | Another name the page may be opened by, such as your computer's Tailscale name (`mymac.tail1234.ts.net`). Without it, only `localhost`, your computer's own name and IP addresses work. Repeat it for more names. With `mcp`, it applies to every document the agent opens. |
 | `--comment-only` | off | Everyone who opens the page can select text and comment on it, but can't type, move, add or remove anything. Your agent still edits the file. Useful with `--host 0.0.0.0` to show a draft to others. |
-| `--view-only` | off | Everyone who opens the page can only read it and its comments. Your agent's own `pearwrite comment` and `pearwrite resolve` commands still work. |
+| `--view-only` | off | Everyone who opens the page can only read it and its comments. Your agent's own `pearwrite comment`, `pearwrite reply` and `pearwrite resolve` commands still work. |
 | `--no-write-ids` | off | Don't add `data-id` attributes to the file. |
 | `--pause` | `5` | Seconds without a change on the page before Pearwrite prints a `paused after` line. `0` turns it off. |
 | `--log` | none | Also append every change line to this file. |

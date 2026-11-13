@@ -18,6 +18,7 @@ const USAGE = `usage: pearwrite <file.html> [--port 8765] [--host 127.0.0.1] [--
        pearwrite wait [--port 8765] [--timeout <seconds>] [--after <n>]
        pearwrite pending [--port 8765]
        pearwrite comments [--port 8765] [--all]
+       pearwrite reply <n> <text> [--port 8765]
        pearwrite resolve <n> [--reply <text>] [--port 8765]
        pearwrite comment <data-id> <text> [--quote <text>] [--option <answer>]... [--port 8765]
        pearwrite guide [<topic> | all]
@@ -38,7 +39,8 @@ Edit an HTML document in the browser while an agent edits the same file.
   --comment-only    anyone who opens the page can comment on it but not edit it; your agent
                     still edits the file. Handy with --host 0.0.0.0 to show a draft to others
   --view-only       anyone who opens the page can only read it and its comments. Your agent's
-                    own commands (pearwrite comment, pearwrite resolve) still work
+                    own commands (pearwrite comment, pearwrite reply, pearwrite resolve)
+                    still work
   --no-write-ids    don't add data-id attributes to the file
                     (blocks without one can't be edited or commented on precisely)
   --pause <s>       after this many seconds without a change on the page, print one
@@ -64,8 +66,10 @@ you last waited or checked, or nothing when there's nothing new. Run it between 
 task, or from a hook (see the README for Codex).
 
 pearwrite comments prints the open comments the user left on the page, as JSON (--all: also
-those marked done). pearwrite resolve marks comment n as done once you've dealt with it; --reply
-adds a short note the user sees under the comment. pearwrite comment leaves your own comment on the
+those marked done). pearwrite reply answers under comment n and keeps it open, for a question
+or anything the user should answer before it's settled; their answer comes back as a change line.
+pearwrite resolve marks comment n as done once you've dealt with it; --reply adds a short note the
+user sees under the comment. pearwrite comment leaves your own comment on the
 element with that data-id, for the user to answer or dismiss; --quote puts it on those words inside
 the element, and --option (up to three times) suggests an answer the user can pick with one click.
 
@@ -109,7 +113,7 @@ const { values, positionals } = parseArgs({
   },
 });
 
-const ARGUMENTS: Record<string, number> = { resolve: 2, comment: 3, setup: 2 };
+const ARGUMENTS: Record<string, number> = { resolve: 2, reply: 3, comment: 3, setup: 2 };
 const fits = positionals[0] === "guide" ? positionals.length <= 2 : positionals.length === (ARGUMENTS[positionals[0]] ?? 1);
 if (values.help || !fits) {
   console.log(USAGE);
@@ -145,7 +149,7 @@ if (positionals[0] === "wait") {
   pending();
 } else if (positionals[0] === "setup") {
   setup();
-} else if (positionals[0] === "comments" || positionals[0] === "resolve" || positionals[0] === "comment") {
+} else if (positionals[0] === "comments" || positionals[0] === "resolve" || positionals[0] === "reply" || positionals[0] === "comment") {
   comments();
 } else if (positionals[0] === "guide") {
   try {
@@ -362,17 +366,18 @@ function pending(): void {
   });
 }
 
-/** `pearwrite comments`, `pearwrite resolve` and `pearwrite comment`: one request to the running server. */
+/** `pearwrite comments`, `pearwrite resolve`, `pearwrite reply` and `pearwrite comment`: one request to the running server. */
 function comments(): void {
   const port = Number(values.port ?? "8765");
   const host = values.host ?? "127.0.0.1";
   const [command, ...rest] = positionals;
   const n = Number(rest[0]);
-  if (command === "resolve" && !(Number.isInteger(n) && n > 0)) {
-    console.error("pearwrite: resolve takes the comment's number, e.g. pearwrite resolve 3");
+  if ((command === "resolve" || command === "reply") && !(Number.isInteger(n) && n > 0)) {
+    console.error(`pearwrite: ${command} takes the comment's number, e.g. pearwrite ${command} 3${command === "reply" ? ' "…"' : ""}`);
     process.exit(2);
   }
   const body = command === "resolve" ? JSON.stringify({ action: "resolve", n, ...(values.reply ? { reply: values.reply } : {}) })
+    : command === "reply" ? JSON.stringify({ action: "reply", by: "agent", n, text: rest[1] })
     : command === "comment" ? JSON.stringify({ action: "add", by: "agent", id: rest[0], text: rest[1],
       ...(values.quote ? { quote: values.quote } : {}), ...(values.option.length ? { options: values.option } : {}) })
     : undefined;
@@ -396,6 +401,7 @@ function comments(): void {
         process.exit(1);
       }
       const output = command === "resolve" ? `Marked comment #${n} as done.`
+        : command === "reply" ? `Replied under comment #${n}; it stays open.`
         : command === "comment" ? `Added comment #${reply.comment?.n} on ${rest[0]}.`
         : JSON.stringify(reply.comments, null, 2);
       process.stdout.write(output + "\n", () => process.exit(0));

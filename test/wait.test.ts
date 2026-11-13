@@ -251,6 +251,23 @@ test("pearwrite comments lists the open comments and pearwrite resolve marks one
     assert.equal(listed.code, 0);
     assert.deepEqual(JSON.parse(listed.out).map((c: { n: number; text: string }) => [c.n, c.text]), [[1, "Name the trees."]]);
 
+    const replied = await run(["reply", "1", "Which kinds?", "--port", String(port)]);
+    assert.equal(replied.code, 0);
+    assert.equal(replied.out, "Replied under comment #1; it stays open.\n");
+    const open = JSON.parse((await run(["comments", "--port", String(port)])).out);
+    assert.deepEqual(open[0].replies.map((r: { by: string; text: string }) => [r.by, r.text]), [["agent", "Which kinds?"]]);
+    // The page can't reply in the agent's name, but the user can reply under their own comment.
+    const asAgent = await fetch(`http://localhost:${port}/__pearwrite/comment`, {
+      method: "POST", headers: { "Content-Type": "application/json", Origin: `http://localhost:${port}` },
+      body: JSON.stringify({ action: "reply", by: "agent", n: 1, text: "Forged" }),
+    });
+    assert.equal(asAgent.status, 403);
+    const asUser = await fetch(`http://localhost:${port}/__pearwrite/comment`, {
+      method: "POST", headers: { "Content-Type": "application/json", Origin: `http://localhost:${port}` },
+      body: JSON.stringify({ action: "reply", n: 1, text: "Native ones." }),
+    });
+    assert.equal(asUser.status, 200);
+
     const resolved = await run(["resolve", "1", "--reply", "Oaks and limes.", "--port", String(port)]);
     assert.equal(resolved.code, 0);
     assert.equal(resolved.out, "Marked comment #1 as done.\n");
