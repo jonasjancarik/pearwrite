@@ -48,6 +48,13 @@ export interface BlockChange {
   before?: string; // plain text
   after?: string;
   place?: Place; // where a removed or moved block was before the change
+  // For a changed block whose words stayed the same: the words whose formatting changed (bold,
+  // italics, a link…), or sameLook when only the markup behind it changed and it looks the same.
+  restyled?: string;
+  sameLook?: true;
+  // Fingerprints of the block's markup and of how it looks, before and after, so that formatting
+  // changes folded together can tell whether they undid each other.
+  marks?: { from: string; to: string; fromLook: string; toLook: string };
 }
 
 export interface HistoryEntry {
@@ -78,6 +85,87 @@ export function plainText(html: string): string {
     .replace(/\s+/g, " ")
     .trim();
   return text.length <= TEXT_MAX ? text : text.slice(0, TEXT_MAX) + "…";
+}
+
+/** Inline tags that change how text looks, with the name they're compared by. */
+const LOOKS: Record<string, string> = {
+  b: "b", strong: "b", i: "i", em: "i", u: "u", s: "s", strike: "s", del: "del", ins: "ins", mark: "mark",
+  sub: "sub", sup: "sup", code: "code", kbd: "code", small: "small", big: "big", a: "a", q: "q", abbr: "abbr",
+};
+
+/** A block's own text, one entry per character, each with the formatting it's shown in. */
+function styledText(own: string): { text: string; styles: string[] } {
+  const open: string[] = [];
+  let text = "";
+  const styles: string[] = [];
+  const decode = (t: string) => t.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e: string) =>
+    e[0] === "#" ? String.fromCodePoint(e[1] === "x" || e[1] === "X" ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENTITIES[e.toLowerCase()] ?? m);
+  const push = (chunk: string) => {
+    for (const ch of chunk) {
+      const space = /\s/.test(ch);
+      // Runs of spaces show as one, and a space looks the same in any formatting.
+      if (space && (text === "" || text.endsWith(" "))) continue;
+      text += space ? " " : ch;
+      styles.push(space ? "" : [...new Set(open)].sort().join(" "));
+    }
+  };
+  for (const [token] of own.matchAll(/<!--[\s\S]*?-->|<[^>]*>|[^<]+/g)) {
+    if (token.startsWith("<!--")) continue;
+    const tag = /^<(\/?)([a-zA-Z][\w-]*)([^>]*)>$/.exec(token);
+    if (!tag) {
+      if (!token.startsWith("<")) push(decode(token));
+      continue;
+    }
+    const [, closing, rawName, rest] = tag;
+    const name = rawName.toLowerCase();
+    if (name === "br") push(" ");
+    const look = LOOKS[name];
+    if (!look) continue;
+    const key = look === "a" ? `a(${/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i.exec(rest)?.slice(1).find((h) => h !== undefined) ?? ""})` : look;
+    if (closing) {
+      const k = open.findLastIndex((o) => o === key || (look === "a" && o.startsWith("a(")));
+      if (k !== -1) open.splice(k, 1);
+    } else if (!rest.trimEnd().endsWith("/")) open.push(key);
+  }
+  if (text.endsWith(" ")) {
+    text = text.slice(0, -1);
+    styles.pop();
+  }
+  return { text, styles };
+}
+
+/**
+ * For a block whose words didn't change: the words whose formatting did, or sameLook when it
+ * looks the same (the markup was only tidied, say by merging two bold runs into one). Nothing
+ * when it can't tell.
+ */
+export function formattingChange(beforeOwn: string, afterOwn: string): Pick<BlockChange, "restyled" | "sameLook" | "marks"> {
+  const a = styledText(beforeOwn), b = styledText(afterOwn);
+  if (a.text !== b.text) return {};
+  const print = (t: string) => createHash("sha1").update(t).digest("hex").slice(0, 10);
+  const marks = { from: print(beforeOwn), to: print(afterOwn), fromLook: print(a.styles.join("|")), toLook: print(b.styles.join("|")) };
+  // The words, and which of them have a character shown differently.
+  const words: { text: string; changed: boolean }[] = [];
+  let word = { text: "", changed: false };
+  for (let i = 0; i <= b.text.length; i++) {
+    if (i === b.text.length || b.text[i] === " ") {
+      if (word.text) words.push(word);
+      word = { text: "", changed: false };
+      continue;
+    }
+    word.text += b.text[i];
+    if (a.styles[i] !== b.styles[i]) word.changed = true;
+  }
+  if (!words.some((w) => w.changed)) return { sameLook: true, marks };
+  // Neighbouring changed words read as one stretch; stretches apart are joined with an ellipsis.
+  const stretches: string[] = [];
+  words.forEach((w, k) => {
+    if (!w.changed) return;
+    if (k > 0 && words[k - 1].changed) stretches[stretches.length - 1] += " " + w.text;
+    else stretches.push(w.text);
+  });
+  const restyled = stretches.join(" … ");
+  return { restyled: restyled.length > 160 ? restyled.slice(0, 159) + "…" : restyled, marks };
 }
 
 interface Block {
@@ -218,7 +306,8 @@ export function diffBlocks(beforeSource: string, afterSource: string): BlockChan
       if (!after.blocks.has(b.parent) || before.blocks.has(b.parent))
         changes.push({ id, kind: "added", tag: b.tag, after: b.text });
     } else if (a.own !== b.own || a.tag !== b.tag) {
-      changes.push({ id, kind: "changed", tag: b.tag, ...(a.tag !== b.tag ? { fromTag: a.tag } : {}), before: a.text, after: b.text });
+      changes.push({ id, kind: "changed", tag: b.tag, ...(a.tag !== b.tag ? { fromTag: a.tag } : {}), before: a.text, after: b.text,
+        ...(a.tag === b.tag && a.text === b.text ? formattingChange(a.own, b.own) : {}) });
     } else if (moved.has(id) || a.parent !== b.parent) {
       changes.push({ id, kind: "moved", tag: b.tag, after: b.text, place: a.place });
     }
@@ -256,7 +345,21 @@ function fold(prev: BlockChange, next: BlockChange): boolean {
   }
   prev.tag = next.tag;
   prev.after = next.after ?? prev.after;
-  return !(prev.kind === "changed" && prev.before === prev.after && !prev.fromTag);
+  if (prev.kind !== "changed") return true;
+  // Whether the words ended up the same, and so whether only the formatting is left to show.
+  const marks = prev.before === prev.after && prev.marks && next.marks
+    ? { from: prev.marks.from, to: next.marks.to, fromLook: prev.marks.fromLook, toLook: next.marks.toLook } : undefined;
+  const restyled = next.restyled ?? prev.restyled;
+  delete prev.restyled;
+  delete prev.sameLook;
+  delete prev.marks;
+  if (prev.before !== prev.after) return true;
+  if (!marks) return !!prev.fromTag; // without fingerprints, words back as they were count as undone
+  prev.marks = marks;
+  if (marks.from === marks.to) return !!prev.fromTag;
+  if (marks.fromLook === marks.toLook) prev.sameLook = true;
+  else if (restyled) prev.restyled = restyled;
+  return true;
 }
 
 /**

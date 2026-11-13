@@ -25,6 +25,8 @@ interface BlockChange {
   before?: string;
   after?: string;
   place?: { parent: string; prev?: string; next?: string };
+  restyled?: string;
+  sameLook?: true;
 }
 
 interface HistoryEntry {

@@ -103,3 +103,29 @@ test("in a long list, only the item that was dragged counts as moved", () => {
   [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
   assert.equal(diffBlocks(before, doc(`<ul data-id="ul-1">${swapped.join("\n")}</ul>`)).length, 1);
 });
+
+test("a change to formatting alone names the words, and tidied markup says it looks the same", () => {
+  const p = (inner: string) => `<body><p data-id="p-5">${inner}</p></body>`;
+  const bolded = diffBlocks(p("<strong>our tools</strong>, including Reference Desk"), p("<strong>our tools</strong><strong>,</strong> including Reference Desk"));
+  assert.deepEqual(bolded.map((c) => [c.kind, c.restyled, c.sameLook]), [["changed", "tools,", undefined]]);
+  const tidied = diffBlocks(p("<strong>our tools</strong><strong>,</strong> including Reference Desk"), p("<strong>our tools,</strong> including Reference Desk"));
+  assert.deepEqual(tidied.map((c) => [c.kind, c.restyled, c.sameLook]), [["changed", undefined, true]]);
+  const twoPlaces = diffBlocks(p("one two three four five six"), p("<em>one</em> two three four <a href=\"x\">five six</a>"));
+  assert.equal(twoPlaces[0].restyled, "one … five six");
+  // A changed link target is a change of formatting too; changed words are an ordinary edit.
+  assert.equal(diffBlocks(p('<a href="a">site</a>'), p('<a href="b">site</a>'))[0].restyled, "site");
+  const edited = diffBlocks(p("Ten trees"), p("Twelve <b>trees</b>"))[0];
+  assert.equal(edited.restyled, undefined);
+  assert.equal(edited.sameLook, undefined);
+});
+
+test("formatting changes that undo each other leave nothing, and tidying after a bold edit keeps the bold", () => {
+  const p = (inner: string) => `<body><p data-id="p-1">${inner}</p></body>`;
+  const history = new History();
+  history.add(YOU, diffBlocks(p("Ten trees"), p("Ten <b>trees</b>")));
+  history.add(YOU, diffBlocks(p("Ten <b>trees</b>"), p("Ten trees")));
+  assert.equal(history.entries.length, 0);
+  history.add(AGENT, diffBlocks(p("Ten trees"), p("Ten <b>tr</b><b>ees</b>")));
+  history.add(AGENT, diffBlocks(p("Ten <b>tr</b><b>ees</b>"), p("Ten <b>trees</b>")));
+  assert.deepEqual(history.entries[0].changes.map((c) => [c.restyled, c.sameLook]), [["trees", undefined]]);
+});
