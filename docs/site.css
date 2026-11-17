@@ -1,6 +1,7 @@
 :root{
   --paper:#f4efe4; --paper-2:#ebe4d4; --sheet:#fffdf8; --ink:#1f2a23; --ink-2:#4d5a52; --ink-3:#7b867f;
   --line:#d9d1bf; --accent:#2f6b4f; --accent-ink:#fff; --mark:#f3d27a; --mark-soft:#fbefc8;
+  --pear-you:#2f6b4f; --pear-it:#e9b949; --pear-both:#55702f;
   --focus:#3d6fd1; --sel:#c9d9f8; --code-bg:#1f2a23; --code-ink:#e9e4d6; --code-dim:#93a199; --add:#9fd3a8; --del:#e9a596;
   --shadow:0 1px 2px #1f2a2314, 0 8px 28px #1f2a231f;
   --serif:"Newsreader",Georgia,serif; --sans:"Instrument Sans",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
@@ -9,6 +10,7 @@
   :root:not([data-theme="light"]){
     --paper:#161b18; --paper-2:#1d2420; --sheet:#232b26; --ink:#ece6d8; --ink-2:#b5bdb6; --ink-3:#86908a;
     --line:#35403a; --accent:#7cc39c; --accent-ink:#10160f; --mark:#b8902f; --mark-soft:#4a3e1d;
+    --pear-you:#6fbf93; --pear-it:#e9b949; --pear-both:#a9c46a;
     --focus:#7ea5ef; --sel:#34507f; --code-bg:#0f1311; --code-ink:#e3ddcf; --code-dim:#7e8a83;
     --shadow:0 1px 2px #0006, 0 10px 30px #0008;
   }
@@ -16,6 +18,7 @@
 :root[data-theme="dark"]{
   --paper:#161b18; --paper-2:#1d2420; --sheet:#232b26; --ink:#ece6d8; --ink-2:#b5bdb6; --ink-3:#86908a;
   --line:#35403a; --accent:#7cc39c; --accent-ink:#10160f; --mark:#b8902f; --mark-soft:#4a3e1d;
+  --pear-you:#6fbf93; --pear-it:#e9b949; --pear-both:#a9c46a;
   --focus:#7ea5ef; --sel:#34507f; --code-bg:#0f1311; --code-ink:#e3ddcf; --code-dim:#7e8a83;
   --shadow:0 1px 2px #0006, 0 10px 30px #0008;
 }
@@ -30,7 +33,8 @@ code,pre{font-family:var(--mono)}
 /* top bar */
 .top{display:flex;align-items:center;justify-content:space-between;padding:22px 0}
 .brand{display:flex;align-items:center;gap:10px;font:600 18px var(--sans);text-decoration:none}
-.brand svg{width:26px;height:26px}
+.brand svg{width:26px;height:26px;overflow:visible;transform:translateY(-3px)}
+.pear-you{fill:var(--pear-you)} .pear-it{fill:var(--pear-it)} .pear-both{fill:var(--pear-both)}
 .top nav{display:flex;gap:22px;font-size:15px;color:var(--ink-2)}
 .top nav a{text-decoration:none}.top nav a:hover{color:var(--ink)}
 
